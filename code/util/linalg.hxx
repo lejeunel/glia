@@ -2,7 +2,7 @@
 #define _glia_util_linalg_hxx_
 
 #include "glia_base.hxx"
-#include "Eigen/Dense"
+#include <Eigen/Dense>
 
 namespace glia {
 

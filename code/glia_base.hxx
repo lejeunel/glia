@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <cfloat>
 #include <climits>
+#include <cmath>
 #include <typeinfo>
 #include <initializer_list>
 #include <functional>
