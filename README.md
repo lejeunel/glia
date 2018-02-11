@@ -27,7 +27,7 @@ Dependencies:
 Instructions:
 
 * Use '-DCMAKE_CXX_FLAGS=-std=c++11' for the first time ITK CMake configuration.
-* Turn on 'ITKReview' module for ITK.
+* Turn on 'ITKReview' module for ITK. (Module_ITKReview)
 * Enable C++11 for Boost libraries.
 
 CMake configurations:
