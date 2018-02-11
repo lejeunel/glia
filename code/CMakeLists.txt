@@ -87,6 +87,9 @@ if(GLIA_BUILD_HMT)
   add_executable(segment_ccm hmt/main_segment_ccm.cxx)
   target_link_libraries(segment_ccm ${ITK_LIBRARIES} ${BOOST_PROGRAM_OPTIONS_LIB})
 
+  add_executable(analyze_watershed_threshold hmt/main_analyze_watershed_threshold.cxx)
+  target_link_libraries(analyze_watershed_threshold ${ITK_LIBRARIES} ${BOOST_PROGRAM_OPTIONS_LIB})
+
   if(GLIA_HMT_USE_RF)
     if(NOT DEFINED RF_SRC_DIR)
       set(RF_SRC_DIR "" CACHE FILEPATH "Random forest source code directory")
