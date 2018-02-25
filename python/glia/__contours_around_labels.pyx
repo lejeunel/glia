@@ -48,8 +48,8 @@ cdef ssize_t contour_around(ssize_t i, ssize_t j, ssize_t e,
                             unsigned char[:,::1] data, double[:,::1] pts,
                             ssize_t x_off, ssize_t y_off) : #nogil:
     """
-    Follows the contour around a set of edges starting at pixel i,j with edge e. The contour data is
-    stored in the given buffer. The number of items used in the buffer is returned as a positive
+    Follows the contour around a set of edges starting at pixel i,j with edge e. The contour data
+    is stored in the given buffer. The number of items used in the buffer is returned as a positive
     number (meaning rows [0,n) are valid). If the first item in the buffer is to be skipped, the
     value is returned negative (meaning rows [1,-n) are valid). If 0 is the contour needed more
     points than the buffer could store. Clears edges in the given data for any edge that is
