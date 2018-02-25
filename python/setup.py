@@ -74,5 +74,6 @@ setup(name='glia',
       package_data = { '': ['*.pyx', '*.pyxdep', '*.pxi', '*.pxd', '*.h', '*.txt'], }, # Make sure all Cython files are wrapped up with the code
       ext_modules = cythonize([
           create_ext('glia.__contours_around_labels'),
+          create_ext('glia.__pairwise_pixel_values'),
       ])
 )
