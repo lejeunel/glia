@@ -14,7 +14,7 @@ def main():
     from argparse import ArgumentParser
     from itertools import izip
     from ._utils import open_image_stack_lbl
-    from pysegtools.images.filters.label import ConsecutivelyNumberImageStack
+    from pysegtools.images.filters.label import RelabelImageStack
     from math import sqrt
     from numpy import zeros
 
@@ -41,8 +41,8 @@ def main():
     from datetime import datetime
 
     # Make sure we have grayscale images
-    ims = ConsecutivelyNumberImageStack(ims, per_slice=not threeD)
-    gts = ConsecutivelyNumberImageStack(gts, per_slice=not threeD)
+    ims = RelabelImageStack(ims, per_slice=not threeD)
+    gts = RelabelImageStack(gts, per_slice=not threeD)
 
     # Count up confusion matrix
     if threeD:
