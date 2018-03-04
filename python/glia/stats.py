@@ -86,7 +86,10 @@ def pairwise_pixel_confusion_matrix(im, gt):
     msk = gt != 0
     im,gt = im[msk], gt[msk]
     del msk
+    msk = im == 0
+    if msk.any(): im[msk] = im.max()+1 # if any 0 pixels in the image (rare, but does happen) make them their own label
     im -= 1; gt -= 1 # shift values so 0 is a valid label
+    del msk
     
     # Count up each pair of im-lbl to gt-lbl
     # This is written in Cython since a pure-Python method is 10-20x slower
