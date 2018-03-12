@@ -45,7 +45,8 @@ bool operation (std::string const& outputSegImageFile,
   for (auto const& rtp: rtmap) { lmap[rtp.first->first] = rtp.second; }
   transformImage(segImage, lmap, mask, true);
   double f, prec, rec;
-  stats::pairF1<BigInt>(f, prec, rec, segImage, truthImage, mask, {},
+  std::unordered_set<unsigned int> empty;
+  stats::pairF1<BigInt>(f, prec, rec, segImage, truthImage, mask, empty,
     {BG_VAL});
   std::cout << prec << " " << rec << " " << 1.0 - f << std::endl;
   if (!outputSegImageFile.empty()) {

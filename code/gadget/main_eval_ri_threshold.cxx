@@ -26,6 +26,7 @@ bool operation ()
   crange(thresholds, lower, step, upper);
   // (TP, TN, FP, FN)
   std::vector<TQuad<BigInt>> scores(nThreshold, TQuad<BigInt>(0, 0, 0, 0));
+  std::unordered_set<unsigned int> empty;
   for (int i = 0; i < n; ++i) {
     auto refImage = readImage<LabelImage<DIMENSION>>(refImageFiles[i]);
     auto resImage = readImage<RealImage<DIMENSION>>(resImageFiles[i]);
@@ -40,7 +41,7 @@ bool operation ()
       canvas = labelConnectedComponents<LabelImage<DIMENSION>>(canvas);
       BigInt TP, TN, FP, FN;
       stats::pairStats(
-          TP, TN, FP, FN, canvas, refImage, mask, {}, {BG_VAL});
+          TP, TN, FP, FN, canvas, refImage, mask, empty, {BG_VAL});
       scores[j].x0 += TP;
       scores[j].x1 += TN;
       scores[j].x2 += FP;

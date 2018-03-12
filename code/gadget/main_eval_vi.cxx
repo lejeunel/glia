@@ -10,9 +10,10 @@ bool operation (std::vector<std::string> const& resImageFiles,
 {
   int n = resImageFiles.size();
   std::vector<double> fss(n), fms(n);
-  for (int i = 0; i < n; ++i) {}
+  std::unordered_set<unsigned int> empty;
+  //for (int i = 0; i < n; ++i) {}
   parfor(0, n, false, [&resImageFiles, &refImageFiles, &maskImageFiles,
-                       &fss, &fms](int i){
+                       &fss, &fms, &empty](int i){
            auto resImage =
                readImage<LabelImage<DIMENSION>>(resImageFiles[i]);
            auto refImage =
@@ -20,8 +21,8 @@ bool operation (std::vector<std::string> const& resImageFiles,
            auto mask = maskImageFiles.empty() || maskImageFiles[i].empty()?
                LabelImage<DIMENSION>::Pointer(nullptr):
                readImage<LabelImage<DIMENSION>>(maskImageFiles[i]);
-           fss[i] = stats::centropy(refImage, resImage, mask, {BG_VAL}, {});
-           fms[i] = stats::centropy(resImage, refImage, mask, {}, {BG_VAL});
+           fss[i] = stats::centropy(refImage, resImage, mask, {BG_VAL}, empty);
+           fms[i] = stats::centropy(resImage, refImage, mask, empty, {BG_VAL});
          }, 0);
   double fs = stats::mean(fss), fm = stats::mean(fms); // false split/merge
   std::cout << fs << " " << fm << " " << fs + fm << std::endl;

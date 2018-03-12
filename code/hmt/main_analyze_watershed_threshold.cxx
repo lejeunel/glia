@@ -253,6 +253,7 @@ bool operation (std::vector<std::string> const& pbFiles,
   std::vector<BigInt> tps(n), tns(n), fps(n), fns(n);
   std::vector<size_t> regionNums(n, 0);
   std::vector<size_t> merges(n, 0), splits(n, 0);
+  std::unordered_set<unsigned int> empty;
   for (size_t i = 0; i < n; ++i) {
     std::cout << std::setw(2) << i << "/" << std::setw(2) << n << "   " << std::setw(3) << (i*100)/n << "%" << std::endl;
       
@@ -270,7 +271,7 @@ bool operation (std::vector<std::string> const& pbFiles,
     pre_merge(label, pb, mask, sizeThresholds, rpbThreshold);
     
     // Calculate the confusion matrix for this image
-    pairStats(tps[i], tns[i], fps[i], fns[i], label, truth, mask, {}, {BG_VAL});
+    pairStats(tps[i], tns[i], fps[i], fns[i], label, truth, mask, empty, {BG_VAL});
 
     // Count the number of regions
     std::unordered_map<Label, size_t> cmap;

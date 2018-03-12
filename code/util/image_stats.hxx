@@ -188,8 +188,9 @@ pairStats
            { ++citerator(cmap, std::make_pair(i, key), 0)->second; }
          });
   }
+  std::unordered_set<unsigned int> empty;
   pairStats(nTruePos, nTrueNeg, nFalsePos, nFalseNeg, cmap,
-            {}, excluded);
+            empty, excluded);
 }
 
 
@@ -214,8 +215,9 @@ pairStats (
           }
         });
   }
+  std::unordered_set<unsigned int> empty;
   pairStats(
-      nTruePos, nTrueNeg, nFalsePos, nFalseNeg, cmap, {}, excluded);
+      nTruePos, nTrueNeg, nFalsePos, nFalseNeg, cmap, empty, excluded);
 }
 
 
