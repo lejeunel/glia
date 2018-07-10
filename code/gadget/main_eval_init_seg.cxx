@@ -29,7 +29,7 @@ bool operation (std::string const& outputSegImageFile,
       std::unordered_map<Label, unsigned int> cmap;
       rtmap[i].first->second.traverse
           ([&truthImage, &cmap](RegionMap::Region::Point const& p)
-           { ++citerator(cmap, truthImage->GetPixel(p), 0)->second; });
+           { ++citerator(cmap, truthImage->GetPixel(p.idx), 0)->second; });
       cmap.erase(BG_VAL); // Ignore background pixels
       unsigned int maxCnt = 0;
       Label maxKey = BG_VAL;
@@ -45,8 +45,7 @@ bool operation (std::string const& outputSegImageFile,
   for (auto const& rtp: rtmap) { lmap[rtp.first->first] = rtp.second; }
   transformImage(segImage, lmap, mask, true);
   double f, prec, rec;
-  std::unordered_set<unsigned int> empty;
-  stats::pairF1<BigInt>(f, prec, rec, segImage, truthImage, mask, empty,
+  stats::pairF1<BigInt>(f, prec, rec, segImage, truthImage, mask, {},
     {BG_VAL});
   std::cout << prec << " " << rec << " " << 1.0 - f << std::endl;
   if (!outputSegImageFile.empty()) {

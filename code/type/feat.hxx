@@ -323,7 +323,7 @@ class RegionLocationFeats : public Object {
   generate (TPoints const& region, double normalizingLength) {
     std::fill(centroid.begin(), centroid.end(), 0.0);
     region.traverse([this](typename TPoints::Point const& p) {
-        for (int i = 0; i < this->regionDim; ++i) { centroid[i] += p[i]; }
+        for (int i = 0; i < this->regionDim; ++i) { centroid[i] += p.idx[i]; }
       });
     double siz = region.size() * normalizingLength;
     for (int i = 0; i < regionDim; ++i) { centroid[i] /= siz; }
@@ -431,7 +431,7 @@ class RegionSetDiffFeats : public Object {
     int ov = 0;
     region1.traverse(
         [&canvas, &ov](typename TPoints::Point const& p) {
-          if (canvas->GetPixel(p) != 0) { ++ov; } });
+          if (canvas->GetPixel(p.idx) != 0) { ++ov; } });
     generate(ov, region0.size(), region1.size());
   }
 };
@@ -495,7 +495,7 @@ class ImageRegionShapeFeats : public virtual RegionShapeFeats {
       region.boundary.traverse
           ([&vp, &image, &thresholds, i]
            (typename TPoints::Point const& p)
-           { if (image->GetPixel(p) >= thresholds[i]) { ++vp; } });
+           { if (image->GetPixel(p.idx) >= thresholds[i]) { ++vp; } });
       validPerims[i] = sdivide(vp, normalizingLength, 0.0);
       rValidPerims[i] = sdivide(vp, region.boundary.size(), 0.0);
     }
@@ -576,7 +576,7 @@ class ImageRegionShapeIntraDiffFeats :
       boundary.traverse
           ([&vp, &image, &thresholds, i]
            (typename TPoints::Point const& p)
-           { if (image->GetPixel(p) >= thresholds[i]) { ++vp; } });
+           { if (image->GetPixel(p.idx) >= thresholds[i]) { ++vp; } });
       validBoundaryLengths[i] = sdivide(
           std::ceil(vp / 2.0), normalizingLength, 0.0);
       rValidBoundaryLengths[i] = sdivide(
@@ -712,7 +712,7 @@ class ImageRealFeats : public Object {
     vals.reserve(n);
     points.traverse(
         [&image, &vals, this](typename TPoints::Point const& p) {
-          auto val = image->GetPixel(p);
+          auto val = image->GetPixel(p.idx);
           vals.push_back(val);
         });
     median = stats::amedian(vals);
@@ -726,7 +726,7 @@ class ImageRealFeats : public Object {
     max = -FMAX;
     stddev = 0.0;
     points.traverse([&image, this](typename TPoints::Point const& p) {
-        auto val = image->GetPixel(p);
+        auto val = image->GetPixel(p.idx);
         this->mean += val;
         this->stddev += (double)val * val;
         if (val < this->min) { this->min = val; }

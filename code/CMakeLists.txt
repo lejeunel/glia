@@ -30,11 +30,11 @@ endif(GLIA_MT)
 include_directories(.)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
-find_package(ITK REQUIRED)
+find_package(ITK 5.0 REQUIRED)
 include(${ITK_USE_FILE})
 
-set(Eigen_INCLUDE_DIR "" CACHE FILEPATH "Eigen source directory")
-include_directories(${Eigen_INCLUDE_DIR})
+find_package (Eigen3 3.3 REQUIRED)
+include_directories ( ${EIGEN3_INCLUDE_DIR} )
 
 option(BOOST_MULTITHREADED "Linking against multi-threaded Boost libraries" OFF)
 set(BOOST_PROGRAM_OPTIONS_LIB "boost_program_options")
@@ -122,7 +122,7 @@ if(GLIA_BUILD_HMT)
     target_link_libraries(train_sshmt_mlp ${BOOST_PROGRAM_OPTIONS_LIB})
 
     add_executable(pred_logsig sshmt/main_pred_logsig.cxx)
-    target_link_libraries(pred_logsig ${BOOST_PROGRAM_OPTIONS_LIB})
+    target_link_libraries(pred_logsig ${BOOST_PROGRAM_OPTIONS_LIB} Eigen3::Eigen)
 
     add_executable(pred_mlp sshmt/main_pred_mlp.cxx)
     target_link_libraries(pred_mlp ${BOOST_PROGRAM_OPTIONS_LIB})

@@ -99,7 +99,7 @@ getNeighborValues(TContainer& nvs,
   traverseNeighbors
       (point, image->GetRequestedRegion(), mask, [&nvs, &image]
        (Point<TImage<TImagePtr>::ImageDimension> point)
-       { nvs.insert(nvs.end(), image->GetPixel(point)); });
+       { nvs.insert(nvs.end(), image->GetPixel(point.idx)); });
 }
 
 

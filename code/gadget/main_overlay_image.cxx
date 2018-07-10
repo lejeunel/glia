@@ -27,14 +27,14 @@ bool operation ()
     std::vector<Point<DIMENSION>> bgPoints;
     getPoints(bgPoints, labelImage, mask, BG_VAL, 0);
     if (!bgPoints.empty()) {
-      for (auto const & p : bgPoints) { outputImage->SetPixel(p, bgVal); }
+      for (auto const & p : bgPoints) { outputImage->SetPixel(p.idx, bgVal); }
     } else {
       typedef TRegionMap<Label, Point<DIMENSION>> RegionMap;
       RegionMap rmap(labelImage, mask, true);
       for (auto const& rp: rmap) {
         rp.second.boundary.traverse
             ([&outputImage, &bgVal](RegionMap::Region::Point const& p)
-             { outputImage->SetPixel(p, bgVal); });
+             { outputImage->SetPixel(p.idx, bgVal); });
       }
     }
   }

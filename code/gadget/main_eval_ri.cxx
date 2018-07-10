@@ -13,7 +13,6 @@ bool operation (std::vector<std::string> const& resImageFiles,
 {
   int n = resImageFiles.size();
   std::vector<BigInt> TPs(n), TNs(n), FPs(n), FNs(n);
-  std::unordered_set<unsigned int> empty;
   // parfor(0, n, false, [&resImageFiles, &refImageFiles, &maskImageFiles,
   //                      &TPs, &TNs, &FPs, &FNs](int i){
   //          auto resImage =
@@ -25,7 +24,7 @@ bool operation (std::vector<std::string> const& resImageFiles,
   //            LabelImage<DIMENSION>::Pointer(nullptr):
   //            readImage<LabelImage<DIMENSION>>(maskImageFiles[i]);
   //          stats::pairStats(TPs[i], TNs[i], FPs[i], FNs[i], resImage,
-  //                           refImage, mask, empty, {BG_VAL});
+  //                           refImage, mask, {}, {BG_VAL});
   //        }, 0);
   for (int i = 0; i < n; ++i) {
     auto resImage =
@@ -37,7 +36,7 @@ bool operation (std::vector<std::string> const& resImageFiles,
         LabelImage<DIMENSION>::Pointer(nullptr):
         readImage<LabelImage<DIMENSION>>(maskImageFiles[i]);
     stats::pairStats(TPs[i], TNs[i], FPs[i], FNs[i], resImage,
-                     refImage, mask, empty, {BG_VAL});
+                     refImage, mask, {}, {BG_VAL});
   }
   BigInt TP = 0, TN = 0, FP = 0, FN = 0;
   for (int i = 0; i < n; ++i) {

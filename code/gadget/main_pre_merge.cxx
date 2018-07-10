@@ -50,7 +50,7 @@ bool operation (std::string const& outputImageFile,
                pr0->traverse(
                    [&pbImage, &rpb, rpbThreshold](
                        RegionMap::Region::Point const& p) {
-                     rpb += pbImage->GetPixel(p); });
+                     rpb += pbImage->GetPixel(p.idx); });
                rpb = sdivide(rpb, sz0, 0.0);
                rpbs[key0] = rpb;
                if (rpb > rpbThreshold) { return true; }
@@ -65,7 +65,7 @@ bool operation (std::string const& outputImageFile,
                pr1->traverse(
                    [&pbImage, &rpb, rpbThreshold](
                        RegionMap::Region::Point const& p) {
-                     rpb += pbImage->GetPixel(p); });
+                     rpb += pbImage->GetPixel(p.idx); });
                rpb = sdivide(rpb, sz1, 0.0);
                rpbs[key1] = rpb;
                if (rpb > rpbThreshold) { return true; }

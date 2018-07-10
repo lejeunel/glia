@@ -7,12 +7,14 @@
 namespace glia {
 
 template <UInt D>
-class Point : public Object, public itk::Index<D> {
+class Point : public Object {
  public:
   typedef Object SuperObject;
   typedef itk::Index<D> Super;
+  Super idx;
   typedef Point<D> Self;
   typedef Self* Pointer;
+  const static UInt Dimension = D;
   typedef Self const* ConstPointer;
 
   Point () {}
@@ -20,24 +22,24 @@ class Point : public Object, public itk::Index<D> {
   Point (std::initializer_list<Int> const& index) {
     assert("Error: incorrect initializing index dimension..." &&
            index.size() == D);
-    std::copy(index.begin(), index.begin() + D, Super::m_Index);
+    std::copy(index.begin(), index.begin() + D, idx.GetIndex());
   }
 
-  Point (Super const& index) : Super(index) {}
+  Point (Super const& index) : idx(index) {}
 
   ~Point () override {}
 
   virtual void print (std::ostream& os) const {
     os << "(";
     for (auto i = 0; i < D; ++i) {
-      os << Super::m_Index[i];
+      os << idx[i];
       if (i < D - 1) { os << ", "; }
     }
     os << ")";
   }
 
   friend std::ostream& operator<< (std::ostream& os, Self const& p) {
-    for (auto i = 0; i < D; ++i) { os << Super::m_Index[i] << " "; }
+    for (auto i = 0; i < D; ++i) { os << p.idx[i] << " "; }
     return os;
   }
 };
@@ -85,12 +87,12 @@ class fPoint : public Object, public itk::Point<double, D> {
   ~fPoint () override {}
 
   virtual Self& operator+= (Point<D> const& p) {
-    for (auto i = 0; i < D; ++i) { Super::operator[](i) += p[i]; }
+    for (auto i = 0; i < D; ++i) { Super::operator[](i) += p.idx[i]; }
     return *this;
   }
 
   virtual Self& operator-= (Point<D> const& p) {
-    for (auto i = 0; i < D; ++i) { Super::operator[](i) -= p[i]; }
+    for (auto i = 0; i < D; ++i) { Super::operator[](i) -= p.idx[i]; }
     return *this;
   }
 
@@ -104,7 +106,7 @@ class fPoint : public Object, public itk::Point<double, D> {
   }
 
   friend std::ostream& operator<< (std::ostream& os, Self const& p) {
-    for (auto i = 0; i < D; ++i) { os << p[i] << " "; }
+    for (auto i = 0; i < D; ++i) { os << p.idx[i] << " "; }
     return os;
   }
 };

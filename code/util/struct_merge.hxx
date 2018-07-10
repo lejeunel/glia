@@ -50,7 +50,7 @@ genMergeOrderGreedyUsingPbMean
         getBoundary(b, rit0->second, rit1->second);
         data.first = 0.0;
         b.traverse([&pbImage, &data](typename TRegionMap::Point const& p){
-            data.first += pbImage->GetPixel(p); });
+            data.first += pbImage->GetPixel(p.idx); });
         data.second = b.size();
         data.first = sdivide(data.first, data.second, 0.0);
       };
@@ -105,7 +105,7 @@ genMergeOrderGreedyUsingPbApproxMedian
         data.reserve(b.size());
         b.traverse(
             [&pbImage, &data](typename TRegionMap::Point const& p) {
-              data.push_back(pbImage->GetPixel(p));
+              data.push_back(pbImage->GetPixel(p.idx));
             });
         faux(data, r0, r1);
       };

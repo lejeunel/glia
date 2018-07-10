@@ -50,7 +50,7 @@ class RegionFeatsWithLocation : public RegionFeats {
         region, normalizingArea, normalizingLength, pbImage,
         boundaryThresholds, rImages, rlImages, bImages, pSaliency);
     location = std::make_shared<glia::feat::RegionLocationFeats>(
-        TPoints::Point::GetIndexDimension());
+        TPoints::Point::Dimension);
     location->generate(region, normalizingLength);
     // Advanced shape features only support 2D for now
     fPoint<2> c{location->centroid[0], location->centroid[1]};

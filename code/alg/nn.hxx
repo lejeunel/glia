@@ -3,7 +3,7 @@
 
 #include "type/function.hxx"
 #include "util/text_io.hxx"
-#include "Eigen/Dense"
+#include <Eigen3/Dense>
 
 namespace glia {
 namespace alg {

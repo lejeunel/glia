@@ -155,8 +155,8 @@ genBoundaryConfidenceImage
     auto bit = rit->second.boundary.find(key);
     if (bit != rit->second.boundary.end()) {
       for (auto const& p: *bit->second) {
-        if (bcImage->GetPixel(p) < pbp.second)
-        { bcImage->SetPixel(p, pbp.second); }
+        if (bcImage->GetPixel(p.idx) < pbp.second)
+        { bcImage->SetPixel(p.idx, pbp.second); }
       }
     }
     std::swap(key.first, key.second);
@@ -164,8 +164,8 @@ genBoundaryConfidenceImage
     bit = rit->second.boundary.find(key);
     if (bit != rit->second.boundary.end()) {
       for (auto const& p: *bit->second) {
-        if (bcImage->GetPixel(p) < pbp.second)
-        { bcImage->SetPixel(p, pbp.second); }
+        if (bcImage->GetPixel(p.idx) < pbp.second)
+        { bcImage->SetPixel(p.idx, pbp.second); }
       }
     }
   }

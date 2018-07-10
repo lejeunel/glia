@@ -14,7 +14,7 @@ def main():
     from argparse import ArgumentParser
     from itertools import izip
     from ._utils import open_image_stack_lbl
-    from pysegtools.images.filters.label import RelabelImageStack
+    from pysegtools.images.filters.label import ConsecutivelyNumberImageStack
     from math import sqrt
     from numpy import zeros
 
@@ -41,8 +41,8 @@ def main():
     from datetime import datetime
 
     # Make sure we have grayscale images
-    ims = RelabelImageStack(ims, per_slice=not threeD)
-    gts = RelabelImageStack(gts, per_slice=not threeD)
+    ims = ConsecutivelyNumberImageStack(ims, per_slice=not threeD)
+    gts = ConsecutivelyNumberImageStack(gts, per_slice=not threeD)
 
     # Count up confusion matrix
     if threeD:
@@ -86,10 +86,7 @@ def pairwise_pixel_confusion_matrix(im, gt):
     msk = gt != 0
     im,gt = im[msk], gt[msk]
     del msk
-    msk = im == 0
-    if msk.any(): im[msk] = im.max()+1 # if any 0 pixels in the image (rare, but does happen) make them their own label
     im -= 1; gt -= 1 # shift values so 0 is a valid label
-    del msk
     
     # Count up each pair of im-lbl to gt-lbl
     # This is written in Cython since a pure-Python method is 10-20x slower

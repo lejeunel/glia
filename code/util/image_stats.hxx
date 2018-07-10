@@ -22,7 +22,7 @@ histc (std::vector<uint>& hc, TImagePtr const& image,
   { bounds[i] = bounds[i - 1] + interval; }
   points.traverse([&image, &range, &bounds, &hc, bin]
                   (typename TPoints::Point const& p) {
-                    auto val = image->GetPixel(p);
+                    auto val = image->GetPixel(p.idx);
                     if (val > range.first && val < range.second) {
                       for (auto i = 0; i < bin; ++i) {
                         if (val < bounds[i]) {
@@ -183,14 +183,13 @@ pairStats
     pRegions[i]->traverse
         ([&cmap, &image, &excluded, i](typename TRegion::Point const& p)
          {
-           auto key = image->GetPixel(p);
+           auto key = image->GetPixel(p.idx);
            if (excluded.count(key) == 0)
            { ++citerator(cmap, std::make_pair(i, key), 0)->second; }
          });
   }
-  std::unordered_set<unsigned int> empty;
   pairStats(nTruePos, nTrueNeg, nFalsePos, nFalseNeg, cmap,
-            empty, excluded);
+            {}, excluded);
 }
 
 
@@ -207,7 +206,7 @@ pairStats (
     keyRegionImagePair.first.second->traverse(
         [&cmap, &keyRegionImagePair, &excluded](
             typename TRegion::Point const& p) {
-          auto key = keyRegionImagePair.second->GetPixel(p);
+          auto key = keyRegionImagePair.second->GetPixel(p.idx);
           if (excluded.count(key) == 0) {
             ++citerator(
                 cmap, std::make_pair(
@@ -215,9 +214,8 @@ pairStats (
           }
         });
   }
-  std::unordered_set<unsigned int> empty;
   pairStats(
-      nTruePos, nTrueNeg, nFalsePos, nFalseNeg, cmap, empty, excluded);
+      nTruePos, nTrueNeg, nFalsePos, nFalseNeg, cmap, {}, excluded);
 }
 
 
@@ -298,7 +296,7 @@ getOverlap (
 {
   region.traverse(
       [&overlaps, &refImage](typename TRegion::Point const& p) {
-        auto key = refImage->GetPixel(p);
+        auto key = refImage->GetPixel(p.idx);
         auto oit = overlaps.find(key);
         if (oit == overlaps.end()) { overlaps[key] = 1; } else {
           ++(oit->second);

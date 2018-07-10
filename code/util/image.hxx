@@ -61,7 +61,7 @@ createItkImageRegion (std::initializer_list<UInt> const& size)
   itk::Index<D> _index;
   _index.Fill(0);
   itk::Size<D> _size;
-  std::copy(size.begin(), size.begin() + D, _size.m_Size);
+  std::copy(size.begin(), size.begin() + D, _size.m_InternalArray);
   return itk::ImageRegion<D>(_index, _size);
 }
 
@@ -73,7 +73,7 @@ createItkImageRegion (std::vector<UInt> const& size)
   itk::Index<D> _index;
   _index.Fill(0);
   itk::Size<D> _size;
-  std::copy(size.begin(), size.begin() + D, _size.m_Size);
+  std::copy(size.begin(), size.begin() + D, _size.m_InternalArray);
   return itk::ImageRegion<D>(_index, _size);
 }
 
@@ -88,7 +88,7 @@ createItkImageRegion (
   itk::Index<D> _index;
   for (int i = 0; i < D; ++i) { _index[i] = startIndex[i]; }
   itk::Size<D> _size;
-  std::copy(size.begin(), size.begin() + D, _size.m_Size);
+  std::copy(size.begin(), size.begin() + D, _size.m_InternalArray);
   return itk::ImageRegion<D>(_index, _size);
 }
 
@@ -253,7 +253,7 @@ transformImage (TImagePtr& image, TRegionMap const& rmap,
     if (rit != rmap.end()) {
       rit->second.traverse
           ([&image, &lp](typename TRegionMap::Region::Point const& p)
-           { image->SetPixel(p, lp.second); });
+           { image->SetPixel(p.idx, lp.second); });
     }
   }
 }
