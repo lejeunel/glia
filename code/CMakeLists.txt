@@ -240,7 +240,7 @@ if(GLIA_BUILD_GADGET)
     add_executable(overlay_image gadget/main_overlay_image.cxx)
     target_link_libraries(overlay_image ${ITK_LIBRARIES} ${BOOST_PROGRAM_OPTIONS_LIB})
 
-    add_library(glia SHARED gadget/gadget.hxx pyglia.cxx )
+    add_library(glia SHARED gadget/gadgets.hxx pyglia.cxx )
     target_link_libraries(glia ${ITK_LIBRARIES} ${PYTHON_LIBRARIES} ${Boost_LIBRARIES})
 
 
