@@ -18,7 +18,6 @@
 #include "itkImageSliceIteratorWithIndex.h"
 #include "itkConstNeighborhoodIterator.h"
 #include "itkNeighborhoodIterator.h"
-#include "itkIndex.h"
 
 namespace glia {
 

@@ -98,8 +98,8 @@ getContour (TPoints& border, TBMap& boundaryMap, TPoints const& points,
             TImagePtr const& image, TMaskPtr const& mask)
 {
   for (auto const& p: points) {
-    auto thisVal = image->GetPixel(p.idx);
-    auto ct = getContourTraits(p.idx, image, mask);
+    auto thisVal = image->GetPixel(p);
+    auto ct = getContourTraits(p, image, mask);
     if (ct.first != thisVal) // boundary point
     { boundaryMap[std::make_pair(thisVal, ct.first)].push_back(p); }
     else if (ct.second) // border point
@@ -133,8 +133,8 @@ genContourMap (TPMap& borderMap, TBMap& boundaryMap,
   for (TImageCIIt<TImagePtr> iit(image, image->GetRequestedRegion());
        !iit.IsAtEnd(); ++iit) {
     Point<TImage<TImagePtr>::ImageDimension> point(iit.GetIndex());
-    auto thisVal = image->GetPixel(point.idx);
-    auto ct = getContourTraits(point.idx, image, mask);
+    auto thisVal = image->GetPixel(point);
+    auto ct = getContourTraits(point, image, mask);
     if (ct.first != thisVal) { // boundary point
       boundaryMap[std::make_pair(thisVal, ct.first)].push_back(point);
     }

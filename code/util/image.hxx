@@ -253,7 +253,7 @@ transformImage (TImagePtr& image, TRegionMap const& rmap,
     if (rit != rmap.end()) {
       rit->second.traverse
           ([&image, &lp](typename TRegionMap::Region::Point const& p)
-           { image->SetPixel(p.idx, lp.second); });
+           { image->SetPixel(p, lp.second); });
     }
   }
 }

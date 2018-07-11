@@ -24,13 +24,13 @@ getBoundingBox (
 {
   typedef BoundingBox<TRegion::Point::Dimension> BBox;
   itk::Index<BBox::ImageDimension>
-      lower(region.begin()->second->front().idx),
-      upper(region.begin()->second->front().idx);
+      lower(region.begin()->second->front()),
+      upper(region.begin()->second->front());
   region.traverse
       ([&lower, &upper](typename TRegion::Point const& p) {
         for (int i = 0; i < BBox::ImageDimension; ++i) {
-          if (p.idx[i] < lower[i]) { lower[i] = p.idx[i]; }
-          else if (p.idx[i] > upper[i]) { upper[i] = p.idx[i]; }
+          if (p[i] < lower[i]) { lower[i] = p[i]; }
+          else if (p[i] > upper[i]) { upper[i] = p[i]; }
         }
       });
   bbox.GetModifiableIndex() = lower;
@@ -48,7 +48,7 @@ getCentralMoments (
 {
   ms.fill(0.0);
   region.traverse([&ms, &c](Point<2> const& p) {
-      double dx = p.idx[0] - c[0], dy = p.idx[1] - c[1];
+      double dx = p[0] - c[0], dy = p[1] - c[1];
       double dx2 = dx * dx, dy2 = dy * dy;
       ms[0] += dy2;
       ms[1] += dy2 * dy;
