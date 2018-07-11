@@ -29,8 +29,7 @@ linker_opt = {
     'cygwin'  : ['-fopenmp'],
 }
 np_inc = numpy.get_include()
-import pysegtools
-cy_inc = join(os.path.dirname(pysegtools.__file__), 'general', 'cython') # TODO: better way to get this
+cy_inc = join('general', 'cython') # TODO: better way to get this
 src_ext = '.cpp'
 def create_ext(name, dep=[], src=[], inc=[], lib=[], objs=[]):
     from distutils.extension import Extension
@@ -39,7 +38,7 @@ def create_ext(name, dep=[], src=[], inc=[], lib=[], objs=[]):
         depends=dep,
         sources=[join(*name.split('.'))+src_ext]+src,
         define_macros=[('NPY_NO_DEPRECATED_API','7'),],
-        include_dirs=[np_inc,cy_inc]+inc,
+        include_dirs=[np_inc]+inc,
         library_dirs=lib,
         extra_objects=objs,
         extra_compile_args=compiler_opt.get(compiler_name, []),
@@ -68,7 +67,7 @@ setup(name='glia',
       author_email='jeff@coderforlife.com',
       packages=['glia'],
       setup_requires=['numpy>=1.7'],
-      install_requires=['numpy>=1.7','scipy>=0.16','pysegtools>=0.1'],
+      install_requires=['numpy>=1.7','scipy>=0.16'],
       use_2to3=True, # the code *should* support Python 3 once run through 2to3 but this isn't tested
       zip_safe=False,
       package_data = { '': ['*.pyx', '*.pyxdep', '*.pxi', '*.pxd', '*.h', '*.txt'], }, # Make sure all Cython files are wrapped up with the code

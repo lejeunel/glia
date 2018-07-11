@@ -1,7 +1,5 @@
 """
 Commands for use with GLIA processing.
-
-Jeffrey Bush, 2017, NCMIR, UCSD
 """
 
 from __future__ import division
@@ -10,7 +8,6 @@ from __future__ import absolute_import
 from __future__ import print_function
 
 from abc import ABCMeta, abstractmethod 
-from pysegtools.general.utils import ravel
 def unique(itr): return tuple(set(itr))
 
 class Cmd(object):
@@ -31,11 +28,11 @@ class Cmd(object):
     def apply_settings(self, settings, args):
         for arg in self.arguments: arg.apply_settings(settings, args)
         self.skip = self.__skipper(settings,args)
-    def cmd(self, i): return tuple(ravel(a if isinstance(a, basestring) else a.args(i) for a in self.args))
-    def inputs(self, i): return unique(ravel(a.inputs(i) for a in self.arguments))
-    def outputs(self, i): return unique(ravel(a.outputs(i) for a in self.arguments))
+    #def cmd(self, i): return tuple(ravel(a if isinstance(a, basestring) else a.args(i) for a in self.args))
+    #def inputs(self, i): return unique(ravel(a.inputs(i) for a in self.arguments))
+    #def outputs(self, i): return unique(ravel(a.outputs(i) for a in self.arguments))
     @property
-    def settings(self): return unique(ravel(a.settings for a in self.arguments))
+    #def settings(self): return unique(ravel(a.settings for a in self.arguments))
 
 class SingleCmd(Cmd):
     """A command that is executed once"""
@@ -48,7 +45,7 @@ class RepeatedCmd(Cmd):
     def add_tasks(self, tasks, n):
         if self.skip: return
         settings = self.settings
-        for i in xrange(n):
+        for i in range(n):
             tasks.add(self.cmd(i), inputs=self.inputs(i), outputs=self.outputs(i), settings=settings)
 
 class Argument(object):
@@ -208,9 +205,9 @@ class Condition(Argument):
     def outputs(self, i): return () if self.argx is None else self.argx.outputs(i)
     @property
     def settings(self):
-        settings = unique(ravel(self.extra_settings))
-        settings += unique(ravel(self.arg1.settings))
-        if self.arg2 is not None: settings += unique(ravel(self.arg2.settings))
+        #settings = unique(ravel(self.extra_settings))
+        #settings += unique(ravel(self.arg1.settings))
+        #if self.arg2 is not None: settings += unique(ravel(self.arg2.settings))
         return settings
     def add_parser_arg(self, parser):
         self.arg1.add_parser_arg(parser)
@@ -255,7 +252,7 @@ class FileSet(MultiFile):
     def files(self, n):
         from os.path import join
         if self.threeD: return ['%s.%s'%(self.folder,self.ext)]
-        return [join(self.folder, '%04d.%s'%(i,self.ext)) for i in xrange(n)]
+        return [join(self.folder, '%04d.%s'%(i,self.ext)) for i in range(n)]
 
 class InputSet(FileSet):
     #pylint: disable=arguments-differ

@@ -30,10 +30,13 @@ endif(GLIA_MT)
 include_directories(.)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
-find_package(ITK 4.13 REQUIRED)
+find_package(ITK 5.0 REQUIRED)
 include(${ITK_USE_FILE})
 
+find_package( Boost 1.58.0 COMPONENTS python3 numpy3 REQUIRED )
+find_package(PythonLibs 3 REQUIRED)
 find_package (Eigen3 3.3 REQUIRED)
+INCLUDE_DIRECTORIES("${Boost_INCLUDE_DIRS}" ${PYTHON_INCLUDE_DIRS})
 include_directories ( ${EIGEN3_INCLUDE_DIR} )
 
 option(BOOST_MULTITHREADED "Linking against multi-threaded Boost libraries" OFF)
@@ -43,9 +46,6 @@ if(BOOST_MULTITHREADED)
   set(BOOST_PROGRAM_OPTIONS_LIB "boost_program_options-mt")
 endif(BOOST_MULTITHREADED)
 
-set(Boost_INCLUDE_DIR "" CACHE FILEPATH "Boost include directory")
-set(Boost_LIBRARY_DIR "" CACHE FILEPATH "Boost library directory")
-include_directories(${Boost_INCLUDE_DIR})
 link_directories(${Boost_LIBRARY_DIR})
 
 
@@ -63,8 +63,8 @@ if(GLIA_BUILD_HMT)
     add_definitions(-DGLIA_USE_MEDIAN_AS_FEATS)
   endif(GLIA_HMT_MEDIAN_FEAT)
 
-  add_executable(watershed gadget/main_watershed.cxx)
-  target_link_libraries(watershed ${ITK_LIBRARIES} ${BOOST_PROGRAM_OPTIONS_LIB})
+  #add_executable(watershed gadget/main_watershed.cxx)
+  #target_link_libraries(watershed ${ITK_LIBRARIES} ${BOOST_PROGRAM_OPTIONS_LIB})
 
   add_executable(pre_merge gadget/main_pre_merge.cxx)
   target_link_libraries(pre_merge ${ITK_LIBRARIES} ${BOOST_PROGRAM_OPTIONS_LIB})
@@ -239,6 +239,12 @@ if(GLIA_BUILD_GADGET)
 
     add_executable(overlay_image gadget/main_overlay_image.cxx)
     target_link_libraries(overlay_image ${ITK_LIBRARIES} ${BOOST_PROGRAM_OPTIONS_LIB})
+
+    add_library(glia SHARED gadget/gadget.hxx pyglia.cxx )
+    target_link_libraries(glia ${ITK_LIBRARIES} ${PYTHON_LIBRARIES} ${Boost_LIBRARIES})
+
+
+
   endif(NOT GLIA_3D)
 endif(GLIA_BUILD_GADGET)
 
