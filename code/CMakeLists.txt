@@ -66,8 +66,8 @@ if(GLIA_BUILD_HMT)
   #add_executable(watershed gadget/main_watershed.cxx)
   #target_link_libraries(watershed ${ITK_LIBRARIES} ${BOOST_PROGRAM_OPTIONS_LIB})
 
-  add_executable(pre_merge gadget/main_pre_merge.cxx)
-  target_link_libraries(pre_merge ${ITK_LIBRARIES} ${BOOST_PROGRAM_OPTIONS_LIB})
+  #add_executable(pre_merge gadget/main_pre_merge.cxx)
+  #target_link_libraries(pre_merge ${ITK_LIBRARIES} ${BOOST_PROGRAM_OPTIONS_LIB})
 
   add_executable(merge_order_pb hmt/main_merge_order_pb.cxx)
   target_link_libraries(merge_order_pb ${ITK_LIBRARIES} ${BOOST_PROGRAM_OPTIONS_LIB})
@@ -241,7 +241,7 @@ if(GLIA_BUILD_GADGET)
     target_link_libraries(overlay_image ${ITK_LIBRARIES} ${BOOST_PROGRAM_OPTIONS_LIB})
 
     add_library(glia SHARED gadget/gadgets.hxx pyglia.cxx )
-    target_link_libraries(glia ${ITK_LIBRARIES} ${PYTHON_LIBRARIES} ${Boost_LIBRARIES})
+    target_link_libraries(glia ${Glue}  ${VTK_LIBRARIES} ${ITK_LIBRARIES} ${PYTHON_LIBRARIES} ${Boost_LIBRARIES})
 
 
 

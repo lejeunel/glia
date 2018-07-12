@@ -2,21 +2,49 @@
 #include "util/stats.hxx"
 #include "util/image_io.hxx"
 #include "util/text_cmd.hxx"
-using namespace glia;
+#include "np_helpers.hxx"
+#include "glia_image.hxx"
+#include <itkImageConstIterator.h>
+#include "itkImageLinearIteratorWithIndex.h"
 
-bool operation (std::string const& outputImageFile,
-                std::string const& segImageFile,
-                std::string const& pbImageFile,
-                std::string const& maskImageFile,
-                std::vector<int> const& sizeThresholds,
-                double rpbThreshold, bool relabel,
-                bool write16, bool compress)
+using namespace glia;
+namespace np = boost::python::numpy;
+namespace bp = boost::python;
+
+//  "Label array
+//  "Input pb image file name")
+//  "Input mask image file name (optional)")
+//  "Region size threshold(s) (e.g. -t 50 100)")
+//  "Region average boundary probability threshold")
+//  "Whether to relabel image to consecutive labels [default: false]")
+np::ndarray pre_merge_operation (np::ndarray const& labelArray,
+                                np::ndarray const& pbArray,
+                                np::ndarray const& maskArray,
+                                bp::list const& sizeThresholdsList,
+                                double rpbThreshold,
+                                bool relabel)
 {
-  auto segImage = readImage<LabelImage<DIMENSION>>(segImageFile);
-  auto pbImage = readImage<RealImage<DIMENSION>>(pbImageFile);
-  auto mask = maskImageFile.empty()?
-      LabelImage<DIMENSION>::Pointer(nullptr):
-      readImage<LabelImage<DIMENSION>>(maskImageFile);
+
+
+std::vector<int> sizeThresholds = list_to_vector<int>(bp::extract<bp::object>(sizeThresholdsList));
+
+
+  using LabelImageType =  LabelImage<DIMENSION>;
+  using RealImageType =  RealImage<DIMENSION>;
+  LabelImageType::Pointer segImage = np_to_itk_label(labelArray);
+
+  RealImageType::Pointer pbImage = np_to_itk_real(pbArray);
+
+  //typedef itk::ImageFileWriter<LabelImageType> Writer;
+  //auto writer = Writer::New();
+  //writer->SetFileName("segImage.png");
+  //writer->SetInput(segImage);
+  //writer->Update();
+  //std::cout << "wrote segImage" << std::endl;
+
+  LabelImageType::Pointer mask = (maskArray.get_nd() == 1)?
+    LabelImageType::Pointer(nullptr):
+    np_to_itk_label(maskArray);
   typedef TRegionMap<Label, Point<DIMENSION>> RegionMap;
   RegionMap rmap(segImage, mask, false);
   std::vector<TTriple<Label>> order;
@@ -78,47 +106,10 @@ bool operation (std::string const& outputImageFile,
   transformKeys(lmap, order);
   transformImage(segImage, rmap, lmap);
   if (relabel) { relabelImage(segImage, 0); }
-  if (write16) {
-    castWriteImage<UInt16Image<DIMENSION>>
-        (outputImageFile, segImage, compress);
-  }
-  else { writeImage(outputImageFile, segImage, compress); }
-  return true;
-}
-
-
-int main (int argc, char* argv[])
-{
-  std::string segImageFile, pbImageFile, maskImageFile, outputImageFile;
-  std::vector<int> sizeThresholds;
-  double rpbThreshold;
-  bool relabel = false, write16 = false, compress = false;
-  bpo::options_description opts("Usage");
-  opts.add_options()
-      ("help", "Print usage info")
-      ("segImage,s", bpo::value<std::string>(&segImageFile)->required(),
-       "Input image file name")
-      ("pbImage,p", bpo::value<std::string>(&pbImageFile)->required(),
-       "Input pb image file name")
-      ("maskImage,m", bpo::value<std::string>(&maskImageFile),
-       "Input mask image file name (optional)")
-      ("sizeThreshold,t", bpo::value<std::vector<int>>
-       (&sizeThresholds)->required()->multitoken(),
-       "Region size threshold(s) (e.g. -t 50 100)")
-      ("rpbThreshold,b", bpo::value<double>(&rpbThreshold),
-       "Region average boundary probability threshold")
-      ("relabel,r", bpo::value<bool>(&relabel),
-       "Whether to relabel image to consecutive labels [default: false]")
-      ("write16,u", bpo::value<bool>(&write16),
-       "Whether to write to uint16 image [default: false]")
-      ("compress,z", bpo::value<bool>(&compress),
-       "Whether to compress output image file(s) [default: false]")
-      ("outputImage,o",
-       bpo::value<std::string>(&outputImageFile)->required(),
-       "Output image file name");
-  return
-      parse(argc, argv, opts) &&
-      operation(outputImageFile, segImageFile, pbImageFile, maskImageFile,
-                sizeThresholds, rpbThreshold, relabel, write16, compress)?
-      EXIT_SUCCESS: EXIT_FAILURE;
+  //if (write16) {
+  //  castWriteImage<UInt16Image<DIMENSION>>
+  //      (outputImageFile, segImage, compress);
+  //}
+  //else { writeImage(outputImageFile, segImage, compress); }
+  return itk_to_np<LabelImageType, Label>(segImage);
 }

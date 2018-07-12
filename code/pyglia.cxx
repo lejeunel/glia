@@ -17,9 +17,18 @@ BOOST_PYTHON_MODULE(libglia)
   Py_Initialize();
   np::initialize();
 
-  def("watershed", watershed_operation,
+  bp::def("watershed", watershed_operation,
       bp::args("inputImageFile",
                "level",
+               "relabel"),
+      "foo's docstring");
+
+  bp::def("pre_merge", pre_merge_operation,
+      bp::args("labelArray",
+               "pbArray",
+               "maskArray",
+               "sizeThresholds",
+               "rpbThreshold",
                "relabel"),
       "foo's docstring");
 }

@@ -40,14 +40,22 @@ genMergeOrderGreedyUsingPbMean
  std::vector<double>& saliencies, TRegionMap& rmap, bool updateRegion,
  TImagePtr const& pbImage, CFunc fcond)
 {
+  //std::cout << "genMergeOrderGreedyUsingPbMean: 1" << std::endl;
   typedef std::pair<double, int> ItemData;
+  //std::cout << "genMergeOrderGreedyUsingPbMean: 2" << std::endl;
   typedef typename TRegionMap::Key Key;
+  //std::cout << "genMergeOrderGreedyUsingPbMean: 3" << std::endl;
   auto initFb = [&pbImage, &rmap](ItemData& data, Key r0, Key r1)
       {
+        //std::cout << "genMergeOrderGreedyUsingPbMean: r0: " <<
+        //r0 << std::endl;
         auto rit0 = rmap.find(r0);
+        //std::cout << "genMergeOrderGreedyUsingPbMean: 3" << std::endl;
         auto rit1 = rmap.find(r1);
+        //std::cout << "genMergeOrderGreedyUsingPbMean: 4" << std::endl;
         typename TRegionMap::Region::Boundary b;
         getBoundary(b, rit0->second, rit1->second);
+        //std::cout << "genMergeOrderGreedyUsingPbMean: 5" << std::endl;
         data.first = 0.0;
         b.traverse([&pbImage, &data](typename TRegionMap::Point const& p){
             data.first += pbImage->GetPixel(p); });
