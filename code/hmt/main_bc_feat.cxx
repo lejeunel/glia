@@ -4,6 +4,7 @@
 #include "util/text_cmd.hxx"
 #include "util/mp.hxx"
 #include "hmt/hmt_util.hxx"
+#include "np_helpers.hxx"
 using namespace glia;
 using namespace glia::hmt;
 
@@ -24,33 +25,99 @@ bool useLogShape = false;
 bool useSimpleFeatures = false;
 std::string bfeatFile;
 
-bool operation ()
+namespace np = boost::python::numpy;
+namespace bp = boost::python;
+//Input initial segmentation image
+//Input merging order
+//Input merging saliency  (optional)")
+//Input real image  (optional)")
+//Input real image histogram bins")
+//Input real image histogram lowers")
+//Input real image histogram uppers")
+//Input region label image file names(s) (optional)")
+//Input region label image histogram bins")
+//Input region label image histogram lowers")
+//Input region label image histogram uppers")
+//Input excl. region image file name(s) (optional)")
+//Input excl. region image histogram bins")
+//Input excl. region image histogram lowers")
+//Input excl. boundary image histogram uppers")
+//Input excl. boundary image file name(s) (optional)")
+//Input excl. boundary image histogram bins")
+//Input excl. boundary image histogram lowers")
+//Input excl. boundary image histogram uppers")
+//Boundary image file for image-based shape features")
+//Input mask image file name")
+//Initial saliency [default: 1.0]")
+//Saliency bias [default: 1.0]")
+//Thresholds for image-based shape features (e.g. --bt 0.2 0.5 0.8)")
+//Whether to normalize size and length [default: false]")
+//Whether to use logarithms of shape as features [default: false]")
+//Whether to only use simplified features (following arXiv paper) "
+//Output boundary feature file name (optional)");
+bool bc_feat_operation (np::ndarray const& labelArray,
+                        bp::list const& mergeList,
+                        np::ndarray const& salienciesArray,
+                        np::ndarray const& origImage,
+                        np::ndarray  const& pbArray,
+                        np::ndarray  const& maskArray,
+                        bp::list mergeOrderList,
+                        bp::list histogramBins,
+                        bp::list histogramLowerValues,
+                        bp::list histogramHigherValues,
+                        double initialSaliency,
+                        double saliencyBias,
+                        bp::list boundaryShapeThresholds,
+                        bool normalizeSizeLength,
+                        bool useLogOfShapes)
 {
+  using LabelImageType =  LabelImage<DIMENSION>;
+  using RealImageType =  RealImage<DIMENSION>;
+
   typedef TRegionMap<Label, Point<DIMENSION>> RegionMap;
+
   // Load and set up images
-  auto segImage = readImage<LabelImage<DIMENSION>>(segImageFile);
-  RealImage<DIMENSION>::Pointer pbImage;
+  LabelImageType::Pointer segImage = np_to_itk_label(labelArray);
+  RealImageType::Pointer pbImage = np_to_itk_real(pbArray);
+
+  // Setup
   std::vector<ImageHistPair<RealImage<DIMENSION>::Pointer>>
       rImages, rlImages, bImages;
+
   prepareImages(
-      pbImage, rImages, rlImages, bImages, pbImageFile, rbImageFiles,
-      rlImageFiles, rImageFiles, bImageFiles);
-  auto mask = maskImageFile.empty()?
-      LabelImage<DIMENSION>::Pointer(nullptr):
-      readImage<LabelImage<DIMENSION>>(maskImageFile);
+      pbImage,
+      rImages,
+      rlImages,
+      bImages,
+      pbImageFile,
+      rbImageFiles,
+      rlImageFiles,
+      rImageFiles,
+      bImageFiles);
+
+  LabelImageType::Pointer mask = (maskArray.get_nd() == 1)?
+    LabelImageType::Pointer(nullptr):
+    np_to_itk_label(maskArray);
+
   // Set up normalizing area/length
   double normalizingArea =
       normalizeShape ? getImageVolume(segImage) : 1.0;
   double normalizingLength =
       normalizeShape ? getImageDiagonal(segImage) : 1.0;
+
   // Set up regions etc.
-  std::vector<TTriple<Label>> order;
-  readData(order, mergeOrderFile, true);
+  //std::vector<TTriple<Label>> order;
+
+  auto order = np_to_vector_triple<Label>(mergeOrderList);
+
   std::vector<double> saliencies;
   std::unordered_map<Label, double> saliencyMap;
-  if (!saliencyFile.empty()) {
-    readData(saliencies, saliencyFile, true);
-    genSaliencyMap(saliencyMap, order, saliencies, initSal, salBias);
+  if (!is_empty(salienciesArray)) {
+    genSaliencyMap(saliencyMap,
+                   order,
+                   saliencies,
+                   initialSaliency,
+                   saliencyBias);
   }
   RegionMap rmap(segImage, mask, order, false);
   // Generate region features
@@ -112,98 +179,98 @@ bool operation ()
 }
 
 
-int main (int argc, char* argv[])
-{
-  std::vector<std::string>
-      _rbImageFiles, _rlImageFiles, _rImageFiles, _bImageFiles;
-  std::vector<unsigned int>
-      _rbHistBins, _rlHistBins, _rHistBins, _bHistBins;
-  std::vector<double>
-      _rbHistLowers, _rlHistLowers, _rHistLowers, _bHistLowers;
-  std::vector<double>
-      _rbHistUppers, _rlHistUppers, _rHistUppers, _bHistUppers;
-  bpo::options_description opts("Usage");
-  opts.add_options()
-      ("help", "Print usage info")
-      ("segImage,s", bpo::value<std::string>(&segImageFile)->required(),
-       "Input initial segmentation image file name")
-      ("mergeOrder,o", bpo::value<std::string>(&mergeOrderFile)->required(),
-       "Input merging order file name")
-      ("saliency,y", bpo::value<std::string>(&saliencyFile),
-       "Input merging saliency file name (optional)")
-      ("rbi", bpo::value<std::vector<std::string>>(&_rbImageFiles),
-       "Input real image file name(s) (optional)")
-      ("rbb", bpo::value<std::vector<unsigned int>>(&_rbHistBins),
-       "Input real image histogram bins")
-      ("rbl", bpo::value<std::vector<double>>(&_rbHistLowers),
-       "Input real image histogram lowers")
-      ("rbu", bpo::value<std::vector<double>>(&_rbHistUppers),
-       "Input real image histogram uppers")
-      ("rli", bpo::value<std::vector<std::string>>(&_rlImageFiles),
-       "Input region label image file names(s) (optional)")
-      ("rlb", bpo::value<std::vector<unsigned int>>(&_rlHistBins),
-       "Input region label image histogram bins")
-      ("rll", bpo::value<std::vector<double>>(&_rlHistLowers),
-       "Input region label image histogram lowers")
-      ("rlu", bpo::value<std::vector<double>>(&_rlHistUppers),
-       "Input region label image histogram uppers")
-      ("ri", bpo::value<std::vector<std::string>>(&_rImageFiles),
-       "Input excl. region image file name(s) (optional)")
-      ("rb", bpo::value<std::vector<unsigned int>>(&_rHistBins),
-       "Input excl. region image histogram bins")
-      ("rl", bpo::value<std::vector<double>>(&_rHistLowers),
-       "Input excl. region image histogram lowers")
-      ("ru", bpo::value<std::vector<double>>(&_rHistUppers),
-       "Input excl. boundary image histogram uppers")
-      ("bi", bpo::value<std::vector<std::string>>(&_bImageFiles),
-       "Input excl. boundary image file name(s) (optional)")
-      ("bb", bpo::value<std::vector<unsigned int>>(&_bHistBins),
-       "Input excl. boundary image histogram bins")
-      ("bl", bpo::value<std::vector<double>>(&_bHistLowers),
-       "Input excl. boundary image histogram lowers")
-      ("bu", bpo::value<std::vector<double>>(&_bHistUppers),
-       "Input excl. boundary image histogram uppers")
-      ("pb", bpo::value<std::string>(&pbImageFile)->required(),
-       "Boundary image file for image-based shape features")
-      ("maskImage,m", bpo::value<std::string>(&maskImageFile),
-       "Input mask image file name")
-      ("s0", bpo::value<double>(&initSal),
-       "Initial saliency [default: 1.0]")
-      ("sb", bpo::value<double>(&salBias),
-       "Saliency bias [default: 1.0]")
-      ("bt",
-       bpo::value<std::vector<double>>(&boundaryThresholds)->multitoken(),
-       "Thresholds for image-based shape features (e.g. --bt 0.2 0.5 0.8)")
-      ("ns,n", bpo::value<bool>(&normalizeShape),
-       "Whether to normalize size and length [default: false]")
-      ("logs,l", bpo::value<bool>(&useLogShape),
-       "Whether to use logarithms of shape as features [default: false]")
-      ("simpf", bpo::value<bool>(&useSimpleFeatures),
-       "Whether to only use simplified features (following arXiv paper) "
-       "[default: false]")
-      ("bfeat,b", bpo::value<std::string>(&bfeatFile),
-       "Output boundary feature file name (optional)");
-  if (!parse(argc, argv, opts))
-  { perr("Error: unable to parse input arguments"); }
-  rbImageFiles.reserve(_rbImageFiles.size());
-  rlImageFiles.reserve(_rlImageFiles.size());
-  rImageFiles.reserve(_rImageFiles.size());
-  bImageFiles.reserve(_bImageFiles.size());
-  for (int i = 0; i < _rbImageFiles.size(); ++i) {
-    rbImageFiles.emplace_back(_rbImageFiles[i], _rbHistBins[i],
-                              _rbHistLowers[i], _rbHistUppers[i]);
-  }
-  for (int i = 0; i < _rlImageFiles.size(); ++i) {
-    rlImageFiles.emplace_back(_rlImageFiles[i], _rlHistBins[i],
-                              _rlHistLowers[i], _rlHistUppers[i]);
-  }
-  for (int i = 0; i < _rImageFiles.size(); ++i) {
-    rImageFiles.emplace_back(_rImageFiles[i], _rHistBins[i],
-                             _rHistLowers[i], _rHistUppers[i]);
-  }
-  for (int i = 0; i < _bImageFiles.size(); ++i) {
-    bImageFiles.emplace_back(_bImageFiles[i], _bHistBins[i],
-                             _bHistLowers[i], _bHistUppers[i]);
-  }
-  return operation() ? EXIT_SUCCESS: EXIT_FAILURE;
-}
+//int main (int argc, char* argv[])
+//{
+//  std::vector<std::string>
+//      _rbImageFiles, _rlImageFiles, _rImageFiles, _bImageFiles;
+//  std::vector<unsigned int>
+//      _rbHistBins, _rlHistBins, _rHistBins, _bHistBins;
+//  std::vector<double>
+//      _rbHistLowers, _rlHistLowers, _rHistLowers, _bHistLowers;
+//  std::vector<double>
+//      _rbHistUppers, _rlHistUppers, _rHistUppers, _bHistUppers;
+//  bpo::options_description opts("Usage");
+//  opts.add_options()
+//      ("help", "Print usage info")
+//      ("segImage,s", bpo::value<std::string>(&segImageFile)->required(),
+//       "Input initial segmentation image file name")
+//      ("mergeOrder,o", bpo::value<std::string>(&mergeOrderFile)->required(),
+//       "Input merging order file name")
+//      ("saliency,y", bpo::value<std::string>(&saliencyFile),
+//       "Input merging saliency file name (optional)")
+//      ("rbi", bpo::value<std::vector<std::string>>(&_rbImageFiles),
+//       "Input real image file name(s) (optional)")
+//      ("rbb", bpo::value<std::vector<unsigned int>>(&_rbHistBins),
+//       "Input real image histogram bins")
+//      ("rbl", bpo::value<std::vector<double>>(&_rbHistLowers),
+//       "Input real image histogram lowers")
+//      ("rbu", bpo::value<std::vector<double>>(&_rbHistUppers),
+//       "Input real image histogram uppers")
+//      ("rli", bpo::value<std::vector<std::string>>(&_rlImageFiles),
+//       "Input region label image file names(s) (optional)")
+//      ("rlb", bpo::value<std::vector<unsigned int>>(&_rlHistBins),
+//       "Input region label image histogram bins")
+//      ("rll", bpo::value<std::vector<double>>(&_rlHistLowers),
+//       "Input region label image histogram lowers")
+//      ("rlu", bpo::value<std::vector<double>>(&_rlHistUppers),
+//       "Input region label image histogram uppers")
+//      ("ri", bpo::value<std::vector<std::string>>(&_rImageFiles),
+//       "Input excl. region image file name(s) (optional)")
+//      ("rb", bpo::value<std::vector<unsigned int>>(&_rHistBins),
+//       "Input excl. region image histogram bins")
+//      ("rl", bpo::value<std::vector<double>>(&_rHistLowers),
+//       "Input excl. region image histogram lowers")
+//      ("ru", bpo::value<std::vector<double>>(&_rHistUppers),
+//       "Input excl. boundary image histogram uppers")
+//      ("bi", bpo::value<std::vector<std::string>>(&_bImageFiles),
+//       "Input excl. boundary image file name(s) (optional)")
+//      ("bb", bpo::value<std::vector<unsigned int>>(&_bHistBins),
+//       "Input excl. boundary image histogram bins")
+//      ("bl", bpo::value<std::vector<double>>(&_bHistLowers),
+//       "Input excl. boundary image histogram lowers")
+//      ("bu", bpo::value<std::vector<double>>(&_bHistUppers),
+//       "Input excl. boundary image histogram uppers")
+//      ("pb", bpo::value<std::string>(&pbImageFile)->required(),
+//       "Boundary image file for image-based shape features")
+//      ("maskImage,m", bpo::value<std::string>(&maskImageFile),
+//       "Input mask image file name")
+//      ("s0", bpo::value<double>(&initSal),
+//       "Initial saliency [default: 1.0]")
+//      ("sb", bpo::value<double>(&salBias),
+//       "Saliency bias [default: 1.0]")
+//      ("bt",
+//       bpo::value<std::vector<double>>(&boundaryThresholds)->multitoken(),
+//       "Thresholds for image-based shape features (e.g. --bt 0.2 0.5 0.8)")
+//      ("ns,n", bpo::value<bool>(&normalizeShape),
+//       "Whether to normalize size and length [default: false]")
+//      ("logs,l", bpo::value<bool>(&useLogShape),
+//       "Whether to use logarithms of shape as features [default: false]")
+//      ("simpf", bpo::value<bool>(&useSimpleFeatures),
+//       "Whether to only use simplified features (following arXiv paper) "
+//       "[default: false]")
+//      ("bfeat,b", bpo::value<std::string>(&bfeatFile),
+//       "Output boundary feature file name (optional)");
+//  if (!parse(argc, argv, opts))
+//  { perr("Error: unable to parse input arguments"); }
+//  rbImageFiles.reserve(_rbImageFiles.size());
+//  rlImageFiles.reserve(_rlImageFiles.size());
+//  rImageFiles.reserve(_rImageFiles.size());
+//  bImageFiles.reserve(_bImageFiles.size());
+//  for (int i = 0; i < _rbImageFiles.size(); ++i) {
+//    rbImageFiles.emplace_back(_rbImageFiles[i], _rbHistBins[i],
+//                              _rbHistLowers[i], _rbHistUppers[i]);
+//  }
+//  for (int i = 0; i < _rlImageFiles.size(); ++i) {
+//    rlImageFiles.emplace_back(_rlImageFiles[i], _rlHistBins[i],
+//                              _rlHistLowers[i], _rlHistUppers[i]);
+//  }
+//  for (int i = 0; i < _rImageFiles.size(); ++i) {
+//    rImageFiles.emplace_back(_rImageFiles[i], _rHistBins[i],
+//                             _rHistLowers[i], _rHistUppers[i]);
+//  }
+//  for (int i = 0; i < _bImageFiles.size(); ++i) {
+//    bImageFiles.emplace_back(_bImageFiles[i], _bHistBins[i],
+//                             _bHistLowers[i], _bHistUppers[i]);
+//  }
+//  return operation() ? EXIT_SUCCESS: EXIT_FAILURE;
+//}

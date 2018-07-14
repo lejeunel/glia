@@ -16,12 +16,14 @@ namespace bp = boost::python;
 //       "Input image file name
 //       "Watershed water level
 //       "Whether to relabel output image
-np::ndarray watershed_operation (std::string const& inputImageFile,
+np::ndarray watershed_operation (np::ndarray const& inputImage_np, //grayscale!
                                  double level,
                                  bool relabel)
 {
 
-  auto inputImage = readImage<RealImage<DIMENSION>>(inputImageFile);
+  auto inputImage = np_to_itk_real(inputImage_np);
+  //std::cout << inputImage << std::endl;
+  //auto inputImage = readImage<RealImage<DIMENSION>>(inputImageFile);
   auto outputImage = watershed<LabelImage<DIMENSION>>(inputImage, level);
   using LabelImageType = LabelImage<DIMENSION>;
   if (relabel) {

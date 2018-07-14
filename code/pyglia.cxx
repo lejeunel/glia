@@ -6,7 +6,7 @@
 #include <boost/python/class.hpp>
 #include <boost/python/overloads.hpp>
 #include <boost/python/return_internal_reference.hpp>
-#include "gadget/gadgets.hxx"
+#include "pyglia.hxx"
 
 namespace bp = boost::python;
 namespace np = boost::python::numpy;
@@ -30,5 +30,39 @@ BOOST_PYTHON_MODULE(libglia)
                "sizeThresholds",
                "rpbThreshold",
                "relabel"),
+      "foo's docstring");
+
+  bp::def("merge_order_pb", merge_order_pb_operation,
+      bp::args("labelArray",
+               "pbArray",
+               "maskArray",
+               "bd_intens_stats_type"),
+      "foo's docstring");
+
+  bp::def("bc_feat", bc_feat_operation,
+      bp::args("labelArray",
+               "mergeList",
+               "salienciesArray",
+               "origImage",
+               "pbArray",
+               "maskArray",
+               "mergeOrderList",
+               "histogramBins",
+               "histogramLowerValues",
+               "histogramHigherValues",
+               "initialSaliency",
+               "saliencBias",
+               "boundaryShapeThresholds",
+               "normalizesizelength",
+               "useLogOfShapes"),
+      "foo's docstring");
+
+  bp::def("test_conversion", test_conversion,
+      bp::args("inputImage_np",
+               "inputImageStr",
+               "outputImageStr_itk_rgb",
+               "outputImageStr_itk_real",
+               "outputImageStr_np_rgb",
+               "outputImageStr_np_real"),
       "foo's docstring");
 }

@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 2.8)
 
 project(glia)
 
+# For rtags
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 option(GLIA_3D "Process 3D images other than 2D." OFF)
 option(GLIA_MT "Use multi-threading." OFF)
 option(GLIA_BUILD_HMT "Build HMT/CCHMT module." ON)
@@ -69,11 +72,11 @@ if(GLIA_BUILD_HMT)
   #add_executable(pre_merge gadget/main_pre_merge.cxx)
   #target_link_libraries(pre_merge ${ITK_LIBRARIES} ${BOOST_PROGRAM_OPTIONS_LIB})
 
-  add_executable(merge_order_pb hmt/main_merge_order_pb.cxx)
-  target_link_libraries(merge_order_pb ${ITK_LIBRARIES} ${BOOST_PROGRAM_OPTIONS_LIB})
+  #add_executable(merge_order_pb hmt/main_merge_order_pb.cxx)
+  #target_link_libraries(merge_order_pb ${ITK_LIBRARIES} ${BOOST_PROGRAM_OPTIONS_LIB})
 
-  add_executable(bc_feat hmt/main_bc_feat.cxx)
-  target_link_libraries(bc_feat ${ITK_LIBRARIES} ${BOOST_PROGRAM_OPTIONS_LIB})
+  #add_executable(bc_feat hmt/main_bc_feat.cxx)
+  #target_link_libraries(bc_feat ${ITK_LIBRARIES} ${BOOST_PROGRAM_OPTIONS_LIB})
 
   add_executable(bc_label_vi hmt/main_bc_label_vi.cxx)
   target_link_libraries(bc_label_vi ${ITK_LIBRARIES} ${BOOST_PROGRAM_OPTIONS_LIB})
@@ -240,10 +243,8 @@ if(GLIA_BUILD_GADGET)
     add_executable(overlay_image gadget/main_overlay_image.cxx)
     target_link_libraries(overlay_image ${ITK_LIBRARIES} ${BOOST_PROGRAM_OPTIONS_LIB})
 
-    add_library(glia SHARED gadget/gadgets.hxx pyglia.cxx )
-    target_link_libraries(glia ${Glue}  ${VTK_LIBRARIES} ${ITK_LIBRARIES} ${PYTHON_LIBRARIES} ${Boost_LIBRARIES})
-
-
+    add_library(glia SHARED pyglia.hxx pyglia.cxx )
+    target_link_libraries(glia ${ITK_LIBRARIES} ${PYTHON_LIBRARIES} ${Boost_LIBRARIES})
 
   endif(NOT GLIA_3D)
 endif(GLIA_BUILD_GADGET)

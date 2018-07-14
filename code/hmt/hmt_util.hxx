@@ -13,7 +13,6 @@ struct ImageFileHistPair {
   { histRange = std::make_pair(histLower, histUpper); }
 };
 
-
 void prepareImages (
     RealImage<DIMENSION>::Pointer& pbImage,
     std::vector<ImageHistPair<RealImage<DIMENSION>::Pointer>>& rImages,

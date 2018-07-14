@@ -25,7 +25,6 @@ np::ndarray pre_merge_operation (np::ndarray const& labelArray,
                                 bool relabel)
 {
 
-
 std::vector<int> sizeThresholds = list_to_vector<int>(bp::extract<bp::object>(sizeThresholdsList));
 
 
