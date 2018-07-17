@@ -40,13 +40,11 @@ BOOST_PYTHON_MODULE(libglia)
       "foo's docstring");
 
   bp::def("bc_feat", bc_feat_operation,
-      bp::args("labelArray",
-               "mergeList",
+      bp::args("mergeList",
                "salienciesArray",
-               "origImage",
-               "pbArray",
-               "maskArray",
-               "mergeOrderList",
+               "labelImages",
+               "Images",
+               "boundaryImages",
                "histogramBins",
                "histogramLowerValues",
                "histogramHigherValues",
@@ -55,6 +53,18 @@ BOOST_PYTHON_MODULE(libglia)
                "boundaryShapeThresholds",
                "normalizesizelength",
                "useLogOfShapes"),
+      "foo's docstring");
+
+  bp::def("bc_label_ri", bc_label_ri_operation,
+      bp::args("mergeOrderList",
+               "labels",
+               "groundtruth",
+               "mask",
+               "usePairF1",
+               "globalOpt",
+               "optSplit",
+               "tweak",
+               "maxPrecDrop"),
       "foo's docstring");
 
   bp::def("test_conversion", test_conversion,

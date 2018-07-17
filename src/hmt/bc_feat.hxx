@@ -18,9 +18,11 @@ genSaliencyMap (std::unordered_map<TKey, double>& saliencyMap,
   int n = order.size();
   for (int i = 0; i < n; ++i) {
     if (saliencyMap.count(order[i].x0) == 0)
-    { saliencyMap[order[i].x0] = initSaliency; }
+    {
+      saliencyMap[order[i].x0] = initSaliency; }
     if (saliencyMap.count(order[i].x1) == 0)
-    { saliencyMap[order[i].x1] = initSaliency; }
+    {
+      saliencyMap[order[i].x1] = initSaliency; }
     saliencyMap[order[i].x2] = saliencies[i] + saliencyBias;
   }
 }
@@ -241,7 +243,6 @@ class BoundaryClassificationFeats :
     return os << f.x0 << " " << *f.x1 << " " << *f.x2 << " " << *f.x3;
   }
 };
-
 
 // Follow arXiv paper
 void selectFeatures (

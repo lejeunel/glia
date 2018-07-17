@@ -17,6 +17,7 @@
 #include "itkPasteImageFilter.h"
 #include "itkRGBToLuminanceImageFilter.h"
 #include "type/tuple.hxx"
+#include "hmt/bc_feat.hxx"
 
 using namespace glia;
 namespace np = boost::python::numpy;
@@ -233,6 +234,23 @@ vector_to_np (std::vector<T> const& vec)
 }
 
 template <typename T> np::ndarray
+vector_2d_to_np (std::vector<std::vector<T>> const& vec)
+{
+
+  // flatten vector
+  std::vector<T> flat_vec;
+  for(unsigned int i=0; i<vec.size(); ++i){
+    for(unsigned int j=0; j<vec[i].size(); ++j){
+      flat_vec.push_back(vec[i][j]);
+    }
+  }
+
+  bp::tuple shape = bp::make_tuple(vec.size(), vec[0].size());
+  return vector_to_np<T>(flat_vec).reshape(shape);
+
+}
+
+template <typename T> std::vector<T>
 np_to_vector (np::ndarray const& arr)
 {
 
@@ -309,10 +327,10 @@ np_to_vector_triple(bp::list const& list)
   Tx x1;
   Tx x2;
 
-  for(unsigned int i=0; i<bp::len(list); ++i){
-    x0 = bp::extract<Tx>(list[i][0]);
-    x1 = bp::extract<Tx>(list[i][1]);
-    x2 = bp::extract<Tx>(list[i][2]);
+  for(unsigned int i=0; i<bp::len(list[0]); ++i){
+    x0 = bp::extract<Tx>(list[0][i]);
+    x1 = bp::extract<Tx>(list[1][i]);
+    x2 = bp::extract<Tx>(list[2][i]);
     auto t_ = TTriple<Tx>(x0, x1, x2);
     tpl_out.push_back(t_);
   }
@@ -320,5 +338,33 @@ np_to_vector_triple(bp::list const& list)
   return tpl_out;
 }
 
+// convert python list of arrays to vector of itk real images
+// This builds vector of ImageHistPair
+std::vector<hmt::ImageHistPair<RealImage<DIMENSION>::Pointer>>
+lists_to_image_hist_pair (bp::list const& im_list,
+                          int const& histogramBins,
+                          double const& histogramLowerValues,
+                          double const& histogramHigherValues)
+{
+
+  int n_imgs = bp::len(im_list);
+  std::pair<double, double> hist_range;
+  int n_bins;
+  std::vector<hmt::ImageHistPair<RealImage<DIMENSION>::Pointer>> out;
+
+  out.reserve(n_imgs);
+
+
+  //typename RealImageType::Pointer img = RealImageType::New();
+  for(unsigned int i=0; i<bp::len(im_list); ++i){
+    np::ndarray arr = bp::extract<np::ndarray>(im_list[i]);
+    hist_range.first = histogramLowerValues;
+    hist_range.second = histogramHigherValues;
+    n_bins = histogramBins;
+    out.emplace_back(np_to_itk_real(arr), n_bins, hist_range);
+  }
+
+  return out;
+}
 
 #endif

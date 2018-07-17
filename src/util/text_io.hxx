@@ -104,6 +104,7 @@ template <typename T> void
 writeData (std::string const& file, std::vector<T> const& data,
            std::string const& delim, int precision = -1)
 {
+  std::cout << "writing features to file: " << file << std::endl;
   writer(file, data, [&delim, precision]
          (std::ofstream& os, T const& x){ os << x; },
          delim, precision);

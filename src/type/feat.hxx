@@ -590,7 +590,7 @@ class ImageRegionShapeIntraDiffFeats :
 };
 
 
-// Label image features
+// Label image features (areas, perimeter)
 class ImageLabelFeats : public Object {
  public:
   typedef ImageLabelFeats Self;

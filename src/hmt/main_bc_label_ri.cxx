@@ -8,19 +8,20 @@
 #include "util/text_io.hxx"
 #include "util/text_cmd.hxx"
 #include "util/mp.hxx"
+#include "np_helpers.hxx"
 using namespace glia;
 using namespace glia::hmt;
 
-std::string bcLabelFile;
-std::string segImageFile;
-std::string mergeOrderFile;
-std::string truthImageFile;
-std::string maskImageFile;
-bool usePairF1 = true;
-bool optSplit = false;
-int globalOpt = 0;  // 0: Bypass, 1: RCC by merge, 2: RCC by split
-bool tweak = false;
-double maxPrecDrop = 1.0;
+//std::string bcLabelFile;
+//std::string segImageFile;
+//std::string mergeOrderFile;
+//std::string truthImageFile;
+//std::string maskImageFile;
+//bool usePairF1 = true;
+//bool optSplit = false;
+//int globalOpt = 0;  // 0: Bypass, 1: RCC by merge, 2: RCC by split
+//bool tweak = false;
+//double maxPrecDrop = 1.0;
 
 struct NodeData {
   Label label;
@@ -28,15 +29,48 @@ struct NodeData {
   int bcLabel = BC_LABEL_MERGE;
 };
 
-bool operation ()
+//For a given merge order and saliency metric, compute for each clique
+//a label denoting the merge split decision
+
+
+// Parameters
+
+//Input initial segmentation image file name")
+//Input merging order file name")
+//Input ground truth segmentation image file name")
+//Input mask image file name (optional)")
+//Whether to use pair F1 other than traditional Rand index "
+//[default: true]")
+//Global optimal assignment type (0: none, 1: RCC by merge, "
+//2: RCC by split) [default: 0]")
+//Whether to determine based on optimal splits [default: false]")
+//Whether to tweak conditions for thick boundaries [default: false]")
+//Maximum precision drop allowed for merge [default: 1.0]")
+
+np::ndarray bc_label_ri_operation(bp::list const& mergeOrderList,
+                              np::ndarray const& labels,
+                              np::ndarray const& groundtruth,
+                              np::ndarray const& maskArray,
+                              bool const& usePairF1,
+                              int const& globalOpt,
+                              bool const& optSplit,
+                              bool const& tweak,
+                              double const& maxPrecDrop)
 {
-  std::vector<TTriple<Label>> order;
-  readData(order, mergeOrderFile, true);
-  auto segImage = readImage<LabelImage<DIMENSION>>(segImageFile);
-  auto truthImage = readImage<LabelImage<DIMENSION>>(truthImageFile);
-  auto mask = maskImageFile.empty()?
-      LabelImage<DIMENSION>::Pointer(nullptr):
-      readImage<LabelImage<DIMENSION>>(maskImageFile);
+
+  using LabelImageType =  LabelImage<DIMENSION>;
+  using RealImageType =  RealImage<DIMENSION>;
+
+  auto order = np_to_vector_triple<Label>(mergeOrderList);
+
+  LabelImageType::Pointer segImage = np_to_itk_label(bp::extract<np::ndarray>(labels));
+
+  LabelImageType::Pointer truthImage = np_to_itk_label(bp::extract<np::ndarray>(groundtruth));
+
+  LabelImageType::Pointer mask = (maskArray.get_nd() == 1)?
+    LabelImageType::Pointer(nullptr):
+    np_to_itk_label(maskArray);
+
   typedef TRegionMap<Label, Point<DIMENSION>> RegionMap;
   RegionMap rmap(segImage, mask, order, false);
   int n = order.size();
@@ -48,7 +82,7 @@ bool operation ()
       mergeF1s.resize(n);
       splitF1s.resize(n);
       parfor(0, n, true, [&bcLabels, &mergeF1s, &splitF1s, &rmap, &order,
-                          &truthImage](int i) {
+                          &truthImage, &tweak, &maxPrecDrop](int i) {
                bcLabels[i] = genBoundaryClassificationLabelF1<BigInt>(
                    mergeF1s[i], splitF1s[i], rmap, order[i].x0,
                    order[i].x1, order[i].x2, truthImage, tweak,
@@ -150,38 +184,6 @@ bool operation ()
     for (auto const& node : tree)
     { if (!node.isLeaf()) { bcLabels.push_back(node.data.bcLabel); } }
   }
-  if (!bcLabelFile.empty()) { writeData(bcLabelFile, bcLabels, "\n"); }
-  return true;
-}
-
-
-int main (int argc, char* argv[])
-{
-  bpo::options_description opts("Usage");
-  opts.add_options()
-      ("help", "Print usage info")
-      ("segImage,s", bpo::value<std::string>(&segImageFile)->required(),
-       "Input initial segmentation image file name")
-      ("mergeOrder,o", bpo::value<std::string>(&mergeOrderFile)->required(),
-       "Input merging order file name")
-      ("truthImage,t", bpo::value<std::string>(&truthImageFile)->required(),
-       "Input ground truth segmentation image file name")
-      ("maskImage,n", bpo::value<std::string>(&maskImageFile),
-       "Input mask image file name (optional)")
-      ("f1", bpo::value<bool>(&usePairF1),
-       "Whether to use pair F1 other than traditional Rand index "
-       "[default: true]")
-      ("opt,g", bpo::value<int>(&globalOpt),
-       "Global optimal assignment type (0: none, 1: RCC by merge, "
-       "2: RCC by split) [default: 0]")
-      ("optSplit,p", bpo::value<bool>(&optSplit),
-       "Whether to determine based on optimal splits [default: false]")
-      ("tweak,w", bpo::value<bool>(&tweak),
-       "Whether to tweak conditions for thick boundaries [default: false]")
-      ("mpd,d", bpo::value<double>(&maxPrecDrop),
-       "Maximum precision drop allowed for merge [default: 1.0]")
-      ("bclabel,l", bpo::value<std::string>(&bcLabelFile),
-       "Output boundary label file name (optional)");
-  return parse(argc, argv, opts) && operation()?
-      EXIT_SUCCESS: EXIT_FAILURE;
+  //if (!bcLabelFile.empty()) { writeData(bcLabelFile, bcLabels, "\n"); }
+  return vector_to_np<int>(bcLabels);
 }

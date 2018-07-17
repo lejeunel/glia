@@ -25,7 +25,6 @@ bool compress = false;
 std::string bcImageFile;
 std::string finalSegImageFile;
 
-
 bool operation ()
 {
   typedef TTree<NodeData> Tree;

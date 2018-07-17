@@ -5,6 +5,11 @@ project(glia)
 # For rtags
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+set( CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} )
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+
 option(GLIA_3D "Process 3D images other than 2D." OFF)
 option(GLIA_MT "Use multi-threading." OFF)
 option(GLIA_BUILD_HMT "Build HMT/CCHMT module." ON)
@@ -51,11 +56,10 @@ endif(BOOST_MULTITHREADED)
 
 link_directories(${Boost_LIBRARY_DIR})
 
-
 # HMT/CCHMT
 if(GLIA_BUILD_HMT)
-  option(GLIA_HMT_HIST_FEAT "Use histograms as features." OFF)
-  option(GLIA_HMT_MEDIAN_FEAT "Use medians as features." OFF)
+  option(GLIA_HMT_HIST_FEAT "Use histograms as features." ON)
+  option(GLIA_HMT_MEDIAN_FEAT "Use medians as features." ON)
   option(GLIA_HMT_USE_RF "Use random forest for merge tree generation. (Require 3rd party random forest code in place)" OFF)
 
   if(GLIA_HMT_HIST_FEAT)
@@ -81,8 +85,8 @@ if(GLIA_BUILD_HMT)
   add_executable(bc_label_vi hmt/main_bc_label_vi.cxx)
   target_link_libraries(bc_label_vi ${ITK_LIBRARIES} ${BOOST_PROGRAM_OPTIONS_LIB})
 
-  add_executable(bc_label_ri hmt/main_bc_label_ri.cxx)
-  target_link_libraries(bc_label_ri ${ITK_LIBRARIES} ${BOOST_PROGRAM_OPTIONS_LIB})
+  #add_executable(bc_label_ri hmt/main_bc_label_ri.cxx)
+  #target_link_libraries(bc_label_ri ${ITK_LIBRARIES} ${BOOST_PROGRAM_OPTIONS_LIB})
 
   add_executable(segment_greedy hmt/main_segment_greedy.cxx)
   target_link_libraries(segment_greedy ${ITK_LIBRARIES} ${BOOST_PROGRAM_OPTIONS_LIB})
@@ -278,3 +282,22 @@ if(GLIA_BUILD_ML_RF)
     ${RF_SRC_DIR}/rfutils.cpp)
   target_link_libraries(pred_rf ${BOOST_PROGRAM_OPTIONS_LIB})
 endif(GLIA_BUILD_ML_RF)
+
+set(SETUP_PY_IN "${CMAKE_CURRENT_SOURCE_DIR}/setup.py.in")
+set(SETUP_PY    "${CMAKE_CURRENT_SOURCE_DIR}/setup.py")
+set(DEPS      glia)
+set(OUTPUT      "${CMAKE_CURRENT_BINARY_DIR}/build")
+
+configure_file(${SETUP_PY_IN} ${SETUP_PY})
+
+add_custom_command(OUTPUT ${OUTPUT}
+		COMMAND ${CMAKE_COMMAND} -E copy
+			"${CMAKE_CURRENT_SOURCE_DIR}/libglia.so"
+			"${CMAKE_CURRENT_SOURCE_DIR}/glia/libglia.so"
+	       #COMMAND ${PYTHON} ${SETUP_PY} build
+	       COMMAND ${CMAKE_COMMAND} -E touch ${OUTPUT}
+	       DEPENDS ${DEPS})
+
+add_custom_target(target ALL DEPENDS ${OUTPUT})
+
+install(CODE "execute_process(COMMAND pip install -e ${CMAKE_CURRENT_SOURCE_DIR})")

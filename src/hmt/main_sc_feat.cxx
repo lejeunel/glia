@@ -33,10 +33,10 @@ bool operation ()
   std::vector<ImageHistPair<RealImage<DIMENSION>::Pointer>>
       rImages0, rlImages0, bImages0, rImages1, rlImages1, bImages1;
   prepareImages(
-      pbImage0, rImages0, rlImages0, bImages0, pbImageFile0, rbImageFiles0,
+      pbImage0, rImages0, rlImages0, bImages0, rbImageFiles0,
       rlImageFiles0, rImageFiles0, bImageFiles0);
   prepareImages(
-      pbImage1, rImages1, rlImages1, bImages1, pbImageFile1, rbImageFiles1,
+      pbImage1, rImages1, rlImages1, bImages1, rbImageFiles1,
       rlImageFiles1, rImageFiles1, bImageFiles1);
   auto mask0 = maskImageFile0.empty()?
       LabelImage<DIMENSION>::Pointer(nullptr):

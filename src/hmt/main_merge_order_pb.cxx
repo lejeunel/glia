@@ -46,7 +46,6 @@ bp::tuple merge_order_pb_operation (np::ndarray const& labelArray,
         TBoundaryTable<std::vector<double>, RegionMap>::iterator>,
         f_null<std::vector<double>&, Label, Label>);
   } else if (bd_intens_stats_type == 2) {
-    std::cout << "using pb mean" << std::endl,
     genMergeOrderGreedyUsingPbMean(
         order, saliencies, rmap, false, pbImage, f_true
         <TBoundaryTable<std::pair<double, int>, RegionMap>&,
@@ -58,7 +57,6 @@ bp::tuple merge_order_pb_operation (np::ndarray const& labelArray,
 
   return bp::make_tuple(vector_triple_to_np<Label>(order),
                         vector_to_np<double>(saliencies));
-
 }
 
 

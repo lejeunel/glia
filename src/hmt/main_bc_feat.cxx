@@ -27,6 +27,12 @@ std::string bfeatFile;
 
 namespace np = boost::python::numpy;
 namespace bp = boost::python;
+
+//For a given merge order and saliency metric, compute for each clique
+//a feature vector
+
+//Parameters
+
 //Input initial segmentation image
 //Input merging order
 //Input merging saliency  (optional)")
@@ -54,22 +60,21 @@ namespace bp = boost::python;
 //Whether to normalize size and length [default: false]")
 //Whether to use logarithms of shape as features [default: false]")
 //Whether to only use simplified features (following arXiv paper) "
-//Output boundary feature file name (optional)");
-bool bc_feat_operation (np::ndarray const& labelArray,
-                        bp::list const& mergeList,
+//Output boundary feature array
+np::ndarray bc_feat_operation (bp::list const& mergeOrderList,
                         np::ndarray const& salienciesArray,
-                        np::ndarray const& origImage,
-                        np::ndarray  const& pbArray,
+                        bp::list const& labelImages, // SP labels, etc..
+                        bp::list const& Images, // LAB, HSV, SIFT codes, etc..
+                        bp::list  const& boundaryImages, //gPb, UCM, etc..
                         np::ndarray  const& maskArray,
-                        bp::list mergeOrderList,
-                        bp::list histogramBins,
-                        bp::list histogramLowerValues,
-                        bp::list histogramHigherValues,
-                        double initialSaliency,
-                        double saliencyBias,
-                        bp::list boundaryShapeThresholds,
-                        bool normalizeSizeLength,
-                        bool useLogOfShapes)
+                        bp::list const& histogramBins,
+                        bp::list const& histogramLowerValues,
+                        bp::list  const& histogramHigherValues,
+                        double  const& initialSaliency,
+                        double  const& saliencyBias,
+                        bp::list  const& boundaryShapeThresholds,
+                        bool  const& normalizeSizeLength,
+                        bool  const& useLogOfShapes)
 {
   using LabelImageType =  LabelImage<DIMENSION>;
   using RealImageType =  RealImage<DIMENSION>;
@@ -77,23 +82,30 @@ bool bc_feat_operation (np::ndarray const& labelArray,
   typedef TRegionMap<Label, Point<DIMENSION>> RegionMap;
 
   // Load and set up images
-  LabelImageType::Pointer segImage = np_to_itk_label(labelArray);
-  RealImageType::Pointer pbImage = np_to_itk_real(pbArray);
-
-  // Setup
   std::vector<ImageHistPair<RealImage<DIMENSION>::Pointer>>
-      rImages, rlImages, bImages;
+      vecImages, vecLabelImages, vecBoundaryImages;
 
-  prepareImages(
-      pbImage,
-      rImages,
-      rlImages,
-      bImages,
-      pbImageFile,
-      rbImageFiles,
-      rlImageFiles,
-      rImageFiles,
-      bImageFiles);
+  LabelImageType::Pointer segImage = np_to_itk_label(bp::extract<np::ndarray>(labelImages[0]));
+
+  RealImageType::Pointer pbImage = np_to_itk_real(bp::extract<np::ndarray>(boundaryImages[0]));
+
+  RealImageType::Pointer image = np_to_itk_real(bp::extract<np::ndarray>(Images[0]));
+
+  // Set histogram ranges and bins
+  vecLabelImages = lists_to_image_hist_pair(labelImages,
+                                bp::extract<int>(histogramBins[0]),
+                                bp::extract<double>(histogramLowerValues[0]),
+                                bp::extract<double>(histogramHigherValues[0]));
+
+  vecImages = lists_to_image_hist_pair(Images,
+                                bp::extract<int>(histogramBins[1]),
+                                bp::extract<double>(histogramLowerValues[1]),
+                                bp::extract<double>(histogramHigherValues[1]));
+
+  vecBoundaryImages = lists_to_image_hist_pair(boundaryImages,
+                                bp::extract<int>(histogramBins[2]),
+                                bp::extract<double>(histogramLowerValues[2]),
+                                bp::extract<double>(histogramHigherValues[2]));
 
   LabelImageType::Pointer mask = (maskArray.get_nd() == 1)?
     LabelImageType::Pointer(nullptr):
@@ -105,12 +117,9 @@ bool bc_feat_operation (np::ndarray const& labelArray,
   double normalizingLength =
       normalizeShape ? getImageDiagonal(segImage) : 1.0;
 
-  // Set up regions etc.
-  //std::vector<TTriple<Label>> order;
-
   auto order = np_to_vector_triple<Label>(mergeOrderList);
 
-  std::vector<double> saliencies;
+  auto saliencies = np_to_vector<double>(salienciesArray);
   std::unordered_map<Label, double> saliencyMap;
   if (!is_empty(salienciesArray)) {
     genSaliencyMap(saliencyMap,
@@ -119,65 +128,77 @@ bool bc_feat_operation (np::ndarray const& labelArray,
                    initialSaliency,
                    saliencyBias);
   }
-  RegionMap rmap(segImage, mask, order, false);
+
   // Generate region features
+  std::cout << "generating region features" << std::endl;
+  RegionMap rmap(segImage, mask, order, false);
   int rn = rmap.size();
   std::vector<std::pair<Label, std::shared_ptr<RegionFeats>>> rfeats(rn);
   parfor(rmap, true, [
-      &rfeats, &rImages, &rlImages, &bImages, &pbImage, &saliencyMap,
+      &rfeats, &vecImages, &vecLabelImages,
+      &vecBoundaryImages, &pbImage, &saliencyMap,
       normalizingArea, normalizingLength](
           RegionMap::const_iterator rit, int i) {
            rfeats[i].first = rit->first;
            rfeats[i].second = std::make_shared<RegionFeats>();
            rfeats[i].second->generate(
                rit->second, normalizingArea, normalizingLength,
-               pbImage, boundaryThresholds, rImages, rlImages, bImages,
+               pbImage, boundaryThresholds,
+               vecImages, vecLabelImages, vecBoundaryImages,
                ccpointer(saliencyMap, rit->first));
          }, 0);
+
   std::unordered_map<Label, std::shared_ptr<RegionFeats>> rfmap;
   for (auto const& rfp : rfeats) { rfmap[rfp.first] = rfp.second; }
-  // Generate boundary classifier features
-  if (!bfeatFile.empty()) {
-    int bn = order.size();
-    std::vector<BoundaryClassificationFeats> bfeats(bn);
-    parfor(0, bn, true, [
-        &rmap, &order, &bfeats, &rfmap, &bImages,
-        &pbImage, normalizingLength](int i) {
-             Label r0 = order[i].x0;
-             Label r1 = order[i].x1;
-             Label r2 = order[i].x2;
-             bfeats[i].x1 = rfmap.find(r0)->second.get();
-             bfeats[i].x2 = rfmap.find(r1)->second.get();
-             bfeats[i].x3 = rfmap.find(r2)->second.get();
-             // Keep region 0 area <= region 1 area
-             if (bfeats[i].x1->shape->area > bfeats[i].x2->shape->area) {
-               std::swap(r0, r1);
-               std::swap(bfeats[i].x1, bfeats[i].x2);
-             }
-             RegionMap::Region::Boundary b;
-             getBoundary(b, rmap.find(r0)->second, rmap.find(r1)->second);
-             bfeats[i].x0.generate(
-                 b, normalizingLength, *bfeats[i].x1, *bfeats[i].x2,
-                 *bfeats[i].x3, pbImage, boundaryThresholds, bImages);
-           }, 0);
-    // Log shape
-    if (useLogShape) {
-      parfor(
-          0, rn, false, [&rfeats](int i) { rfeats[i].second->log(); }, 0);
-      parfor(
-          0, bn, false, [&bfeats](int i) { bfeats[i].x0.log(); }, 0);
-    }
-    if (useSimpleFeatures) {
-      std::vector<std::vector<FVal>> pickedFeats(bn);
-      for (int i = 0; i < bn; ++i) {
-        selectFeatures(pickedFeats[i], bfeats[i]);
-      }
-      writeData(bfeatFile, pickedFeats, " ", "\n", FLT_PREC);
-    } else { writeData(bfeatFile, bfeats, "\n", FLT_PREC); }
-  }
-  return true;
-}
 
+  // Generate boundary classifier features
+  std::cout << "generating boundary features" << std::endl;
+  int bn = order.size();
+  std::vector<BoundaryClassificationFeats> bfeats(bn);
+  parfor(0, bn, true, [
+                       &rmap, &order, &bfeats, &rfmap, &vecBoundaryImages,
+                       &pbImage, normalizingLength](int i) {
+                       Label r0 = order[i].x0;
+                       Label r1 = order[i].x1;
+                       Label r2 = order[i].x2;
+                       bfeats[i].x1 = rfmap.find(r0)->second.get();
+                       bfeats[i].x2 = rfmap.find(r1)->second.get();
+                       bfeats[i].x3 = rfmap.find(r2)->second.get();
+                       // Keep region 0 area <= region 1 area
+                       if (bfeats[i].x1->shape->area > bfeats[i].x2->shape->area) {
+                         std::swap(r0, r1);
+                         std::swap(bfeats[i].x1, bfeats[i].x2);
+                       }
+                       RegionMap::Region::Boundary b;
+                       getBoundary(b, rmap.find(r0)->second,
+                                   rmap.find(r1)->second);
+                       bfeats[i].x0.generate(b,
+                                             normalizingLength,
+                                             *bfeats[i].x1,
+                                             *bfeats[i].x2,
+                                             *bfeats[i].x3,
+                                             pbImage,
+                                             boundaryThresholds,
+                                             vecBoundaryImages);
+                      }, 0);
+
+  // Log shape
+
+  // Get features for boundary classifier
+  if (useLogShape) {
+    parfor(
+           0, rn, false, [&rfeats](int i) { rfeats[i].second->log(); }, 0);
+    parfor(
+           0, bn, false, [&bfeats](int i) { bfeats[i].x0.log(); }, 0);
+  }
+
+  std::vector<std::vector<FVal>> pickedFeats(bn);
+  for (int i = 0; i < bn; ++i) {
+    selectFeatures(pickedFeats[i], bfeats[i]);
+  }
+
+  return vector_2d_to_np<FVal>(pickedFeats);
+}
 
 //int main (int argc, char* argv[])
 //{
