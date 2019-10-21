@@ -13,7 +13,6 @@
 #include "itkScalarConnectedComponentImageFilter.h"
 #include "itkResampleImageFilter.h"
 #include "itkShrinkImageFilter.h"
-#include "itkVectorResampleImageFilter.h"
 #include "itkNearestNeighborInterpolateImageFunction.h"
 #include "itkVectorNearestNeighborInterpolateImageFunction.h"
 #include "itkRescaleIntensityImageFilter.h"
@@ -486,7 +485,7 @@ resampleVectorImage (TVecImagePtrIn const& image,
                      bool nearestNeighborInterpolation)
 {
   const uint D = TImage<TVecImagePtrIn>::ImageDimension;
-  auto resampler = itk::VectorResampleImageFilter
+  auto resampler = itk::ResampleImageFilter
       <TImage<TVecImagePtrIn>, TVecImageOut>::New();
   resampler->SetInput(image);
   resampler->SetSize(size);
