@@ -8,6 +8,6 @@ setup(
     author_email='laurent.lejeune@artorg.unibe.ch',
     description='glia',
     packages=['glia'],
-    package_dir={'glia': '/home/krakapwa/Documents/software/glia_my/build/src'},
+    package_dir={'glia': '/home/krakapwa/Documents/software/glia/build/src'},
     package_data = {'glia': ['libglia.so']}
 )

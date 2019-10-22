@@ -2,12 +2,12 @@ from distutils.core import setup
 import os
 
 setup(
-    name='glia',
+    name='pyglia',
     version='${PACKAGE_VERSION}',
     author='Laurent Lejeune',
     author_email='laurent.lejeune@artorg.unibe.ch',
-    description='glia',
-    packages=['glia'],
-    package_dir={'glia': '${CMAKE_CURRENT_BINARY_DIR}'},
-    package_data = {'glia': ['libglia.so']}
+    description='pyglia',
+    packages=['pyglia'],
+    package_dir={'pyglia': '${CMAKE_CURRENT_BINARY_DIR}/pyglia'},
+    package_data = {'pyglia': ['libglia.so']}
 )

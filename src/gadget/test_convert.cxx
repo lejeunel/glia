@@ -20,7 +20,7 @@ void test_conversion (np::ndarray const& inputImage_np,
                       std::string const& outputImageStr_np_rgb,
                       std::string const& outputImageStr_np_real)
 {
-  std::cout << "reading itk rgb from str" << std::endl;
+  std::cout << "reading itk rgb from str: " << inputImageStr << std::endl;
   auto inputImage_from_str_rgb = readImage<RgbImage>(inputImageStr);
   std::cout << "writing itk rgb from str" << std::endl;
   castWriteImage<RgbImage>

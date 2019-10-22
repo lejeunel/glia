@@ -2,7 +2,7 @@ from glia import utils as utls
 import matplotlib.pyplot as plt
 from glia import libglia
 import os
-from skimage import io, segmentation
+from skimage import io, segmentation, color
 
 path_ = os.path.join('/home',
                      'krakapwa',
