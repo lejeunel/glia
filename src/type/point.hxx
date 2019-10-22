@@ -77,15 +77,19 @@ class fPoint : public Object, public itk::Point<double, D> {
 
 
 template <UInt D>
-class BoundingBox : public Object, public itk::ImageRegion<D> {
+class BoundingBox : public Object {
  public:
   typedef Object SuperObject;
   typedef itk::ImageRegion<D> Super;
   typedef BoundingBox<D> Self;
   typedef Self* Pointer;
   typedef Self const* ConstPointer;
+  static const int dimension = D;
+  Super image_region;
 
-  BoundingBox () {}
+  BoundingBox () {
+    image_region = Super();
+  }
 
   // BoundingBox (Point<D> const& p)
   // { std::copy(p.begin(), p.end(), Super::GetModifiableIndex()); }
@@ -93,15 +97,15 @@ class BoundingBox : public Object, public itk::ImageRegion<D> {
   ~BoundingBox () override {}
 
   virtual UInt& operator[] (int d)
-  { return Super::GetModifiableSize()[d]; }
+  { return image_region.GetModifiableSize()[d]; }
 
-  virtual UInt operator[] (int d) const { return Super::GetSize()[d]; }
+  virtual UInt operator[] (int d) const { return image_region.GetSize()[d]; }
 
   virtual Self& operator+= (BoundingBox const& rhs) {
-    auto& thisIndex = this->GetModifiableIndex();
-    auto& thisSize = this->GetModifiableSize();
-    auto const& rhsIndex = rhs.GetIndex();
-    auto const& rhsSize = rhs.GetSize();
+    auto& thisIndex = this->image_region.GetModifiableIndex();
+    auto& thisSize = this->image_region.GetModifiableSize();
+    auto const& rhsIndex = rhs.image_region.GetIndex();
+    auto const& rhsSize = rhs.image_region.GetSize();
     for (auto i = 0; i < D; ++i) {
       auto lower = std::min(thisIndex[i], rhsIndex[i]);
       auto upper = std::max(thisIndex[i] + thisSize[i],

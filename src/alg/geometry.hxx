@@ -23,19 +23,20 @@ getBoundingBox (
     BoundingBox<TRegion::Point::Dimension>& bbox, TRegion const& region)
 {
   typedef BoundingBox<TRegion::Point::Dimension> BBox;
-  itk::Index<BBox::ImageDimension>
+
+  itk::Index<BBox::dimension>
       lower(region.begin()->second->front()),
       upper(region.begin()->second->front());
   region.traverse
       ([&lower, &upper](typename TRegion::Point const& p) {
-        for (int i = 0; i < BBox::ImageDimension; ++i) {
+         for (int i = 0; i < BBox::dimension; ++i) {
           if (p[i] < lower[i]) { lower[i] = p[i]; }
           else if (p[i] > upper[i]) { upper[i] = p[i]; }
         }
       });
-  bbox.GetModifiableIndex() = lower;
-  for (auto i = 0; i < BBox::ImageDimension; ++i)
-  { bbox.GetModifiableSize()[i] = upper[i] - lower[i]; }
+  bbox.image_region.GetModifiableIndex() = lower;
+  for (auto i = 0; i < BBox::dimension; ++i)
+  { bbox.image_region.GetModifiableSize()[i] = upper[i] - lower[i]; }
 }
 
 
