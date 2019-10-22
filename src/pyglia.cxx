@@ -26,7 +26,6 @@ BOOST_PYTHON_MODULE(libglia)
   bp::def("pre_merge", pre_merge_operation,
       bp::args("label",
                "pbArray",
-               "maskArray",
                "sizeThresholds",
                "rpbThreshold",
                "relabel"),
@@ -35,7 +34,6 @@ BOOST_PYTHON_MODULE(libglia)
   bp::def("merge_order_pb", merge_order_pb_operation,
       bp::args("label",
                "pbArray",
-               "maskArray",
                "bd_intens_stats_type"),
       "foo's docstring");
 

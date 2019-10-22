@@ -62,19 +62,18 @@ namespace bp = boost::python;
 //Whether to only use simplified features (following arXiv paper) "
 //Output boundary feature array
 np::ndarray bc_feat_operation (bp::list const& mergeOrderList,
-                        np::ndarray const& salienciesArray,
-                        bp::list const& labelImages, // SP labels, etc..
-                        bp::list const& Images, // LAB, HSV, SIFT codes, etc..
-                        bp::list  const& boundaryImages, //gPb, UCM, etc..
-                        np::ndarray  const& maskArray,
-                        bp::list const& histogramBins,
-                        bp::list const& histogramLowerValues,
-                        bp::list  const& histogramHigherValues,
-                        double  const& initialSaliency,
-                        double  const& saliencyBias,
-                        bp::list  const& boundaryShapeThresholds,
-                        bool  const& normalizeSizeLength,
-                        bool  const& useLogOfShapes)
+                               np::ndarray const& salienciesArray,
+                               bp::list const& labelImages, // SP labels, etc..
+                               bp::list const& Images, // LAB, HSV, SIFT codes, etc..
+                               bp::list const& boundaryImages, //gPb, UCM, etc..
+                               bp::list const& histogramBins,
+                               bp::list const& histogramLowerValues,
+                               bp::list const& histogramHigherValues,
+                               double const& initialSaliency,
+                               double const& saliencyBias,
+                               bp::list const& boundaryShapeThresholds,
+                               bool const& normalizeSizeLength,
+                               bool const& useLogOfShapes)
 {
   using LabelImageType =  LabelImage<DIMENSION>;
   using RealImageType =  RealImage<DIMENSION>;
@@ -107,9 +106,7 @@ np::ndarray bc_feat_operation (bp::list const& mergeOrderList,
                                 bp::extract<double>(histogramLowerValues[2]),
                                 bp::extract<double>(histogramHigherValues[2]));
 
-  LabelImageType::Pointer mask = (maskArray.get_nd() == 1)?
-    LabelImageType::Pointer(nullptr):
-    np_to_itk_label(maskArray);
+  LabelImageType::Pointer mask = LabelImageType::Pointer(nullptr);
 
   // Set up normalizing area/length
   double normalizingArea =

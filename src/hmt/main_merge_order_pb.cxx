@@ -13,14 +13,12 @@ namespace bp = boost::python;
 
 //"Input initial segmentation image
 //"Input boundary probability image
-//"Input mask image file name (optional)")
 //"Boundary intensity stats type (1: median, 2: mean) [default: 1]")
 //"Output merging order file name (optional)")
 //"Output merging saliency file name (optional)");
 
 bp::tuple merge_order_pb_operation (np::ndarray const& labelArray,
                                     np::ndarray const& pbArray,
-                                    np::ndarray const& maskArray,
                                     int const & bd_intens_stats_type)
 {
 
@@ -33,9 +31,7 @@ bp::tuple merge_order_pb_operation (np::ndarray const& labelArray,
   LabelImageType::Pointer segImage = np_to_itk_label(labelArray);
   RealImageType::Pointer pbImage = np_to_itk_real(pbArray);
 
-  LabelImageType::Pointer mask = (maskArray.get_nd() == 1)?
-    LabelImageType::Pointer(nullptr):
-    np_to_itk_label(maskArray);
+  LabelImageType::Pointer mask = LabelImageType::Pointer(nullptr);
 
   typedef TRegionMap<Label, Point<DIMENSION>> RegionMap;
   RegionMap rmap(segImage, mask, true); // Only use contours

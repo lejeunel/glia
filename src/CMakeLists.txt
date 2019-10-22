@@ -1,7 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
 
-project(glia)
-
 # For rtags
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
@@ -284,7 +282,7 @@ if(GLIA_BUILD_ML_RF)
 endif(GLIA_BUILD_ML_RF)
 
 set(SETUP_PY_IN "${CMAKE_CURRENT_SOURCE_DIR}/setup.py.in")
-set(SETUP_PY    "${CMAKE_CURRENT_BINARY_DIR}/setup.py")
+set(SETUP_PY    "${PROJECT_SOURCE_DIR}/setup.py")
 set(DEPS      glia)
 set(OUTPUT      "${CMAKE_CURRENT_BINARY_DIR}/build")
 
@@ -292,10 +290,7 @@ configure_file(${SETUP_PY_IN} ${SETUP_PY})
 add_custom_command(OUTPUT ${OUTPUT}
 		COMMAND ${CMAKE_COMMAND} -E copy
 			"${CMAKE_CURRENT_SOURCE_DIR}/libglia.so"
-			"${CMAKE_CURRENT_BINARY_DIR}/pyglia/libglia.so"
-		COMMAND ${CMAKE_COMMAND} -E copy
-			"${CMAKE_CURRENT_SOURCE_DIR}/pyglia/__init__.py"
-			"${CMAKE_CURRENT_BINARY_DIR}/pyglia/__init__.py"
+			"${PROJECT_SOURCE_DIR}/glia/libglia.so"
 	       DEPENDS ${DEPS})
 
 add_custom_target(target ALL DEPENDS ${OUTPUT})

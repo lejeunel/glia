@@ -13,20 +13,17 @@ namespace bp = boost::python;
 
 //  "Label array
 //  "Input pb image file name")
-//  "Input mask image file name (optional)")
 //  "Region size threshold(s) (e.g. -t 50 100)")
 //  "Region average boundary probability threshold")
 //  "Whether to relabel image to consecutive labels [default: false]")
 np::ndarray pre_merge_operation (np::ndarray const& labelArray,
-                                np::ndarray const& pbArray,
-                                np::ndarray const& maskArray,
-                                bp::list const& sizeThresholdsList,
-                                double rpbThreshold,
-                                bool relabel)
+                                 np::ndarray const& pbArray,
+                                 bp::list const& sizeThresholdsList,
+                                 double rpbThreshold,
+                                 bool relabel)
 {
 
-std::vector<int> sizeThresholds = list_to_vector<int>(bp::extract<bp::object>(sizeThresholdsList));
-
+  std::vector<int> sizeThresholds = list_to_vector<int>(bp::extract<bp::object>(sizeThresholdsList));
 
   using LabelImageType =  LabelImage<DIMENSION>;
   using RealImageType =  RealImage<DIMENSION>;
@@ -41,9 +38,7 @@ std::vector<int> sizeThresholds = list_to_vector<int>(bp::extract<bp::object>(si
   //writer->Update();
   //std::cout << "wrote segImage" << std::endl;
 
-  LabelImageType::Pointer mask = (maskArray.get_nd() == 1)?
-    LabelImageType::Pointer(nullptr):
-    np_to_itk_label(maskArray);
+  LabelImageType::Pointer mask = LabelImageType::Pointer(nullptr);
   typedef TRegionMap<Label, Point<DIMENSION>> RegionMap;
   RegionMap rmap(segImage, mask, false);
   std::vector<TTriple<Label>> order;
