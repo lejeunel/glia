@@ -13,6 +13,7 @@ using namespace glia;
 namespace np = boost::python::numpy;
 namespace bp = boost::python;
 
+
 void test_conversion (np::ndarray const& inputImage_np,
                       std::string const& inputImageStr,
                       std::string const& outputImageStr_itk_rgb,

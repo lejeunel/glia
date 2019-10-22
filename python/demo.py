@@ -1,63 +1,22 @@
+from os.path import join as pjoin
 from skimage import io, segmentation
 import matplotlib.pyplot as plt
-from glia import libglia
+from pyglia import libglia
 import numpy as np
 import os
-import networkx as nx
-from sklearn.ensemble import RandomForestClassifier
+import sys
 
-path_ = os.path.join('/home',
-                     'krakapwa',
-                     'Documents',
-                     'software',
-                     'glia_my')
+if __name__ == "__main__":
 
-np_file = np.load(os.path.join(path_, 'data.npz'))
+    im_path = sys.argv[-1]
+    path = os.path.split(im_path)[0]
+    im_fname = os.path.splitext(os.path.split(im_path)[1])[0]
 
-truth = io.imread(os.path.join(path_, 'frame_0482_gt.png'))
+    img = io.imread(im_path)
 
-img_dict = np_file['imgs'][()]
-daisy_feats = np_file['daisy']
-labels = np_file['labels']
-merged_labels = np_file['merged_labels']
-order = np_file['order']
-saliencies = np_file['saliencies']
-gpb = np_file['gpb']
-ucm = np_file['ucm']
+    watershed = libglia.watershed(img, level=10., relabel=True)
 
-imgs_for_feats = [img_dict[k]
-                  for k in img_dict.keys()
-                  if(k!='gray')]
-imgs_for_feats += [daisy_feats[i, ...] for i in range(daisy_feats.shape[0])]
-
-feats = libglia.bc_feat(list(order), #Merge list orders
-                saliencies, #Saliency values
-                [merged_labels],
-                [img_dict[k] for k in img_dict.keys() ], #Image
-                [gpb, ucm], #global Probability Boundary map
-                np.array([]), #mask array (unused)
-                3*[16], #Num. of histogram bins per channel
-                3*[0.], #Lower bounds of histograms
-                3*[1.],#Upper bounds of histograms
-                1., #initial saliency value
-                1., #bias of saliency
-                [0.2, 0.5, 0.8], #boundary shape thresholds
-                False, #normalize size and lengths?
-                True) # use log of shapes as features?
-
-y = libglia.bc_label_ri(list(order),
-                        merged_labels,
-                        truth,
-                        np.array([]),
-                        True,
-                        0,
-                        False,
-                        False,
-                        1.0)
-
-cats = categorize_cliques(order, merged_labels)
-Y = [y[cats == c] for c in range(1, 4)]
-X = [feats[cats == c, :] for c in range(1, 4)]
-
-for i in range(0, 3):
-    if(Y[i] ):
+    fig, ax = plt.subplots(1, 2)
+    ax[0].imshow(img)
+    ax[1].imshow(watershed)
+    fig.show()
