@@ -493,7 +493,7 @@ resampleVectorImage (TVecImagePtrIn const& image,
   resampler->SetTransform(itk::IdentityTransform<double, D>::New());
   if (nearestNeighborInterpolation) {
     resampler->SetInterpolator
-        (itk::VectorNearestNeighborInterpolateImageFunction
+        (itk::NearestNeighborInterpolateImageFunction
          <TImage<TVecImagePtrIn>, double>::New());
   }
   resampler->Update();
