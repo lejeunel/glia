@@ -7,14 +7,36 @@
 #include <itkImageConstIterator.h>
 #include "itkImageLinearIteratorWithIndex.h"
 #include "np_helpers.hxx"
+#include "shogun_helpers.hxx"
 
 
 using namespace glia;
 namespace np = boost::python::numpy;
 namespace bp = boost::python;
 
+void test_conversion_shogun_labels(np::ndarray const& A)
+{
 
-void test_conversion (np::ndarray const& inputImage_np,
+  // np::ndarray B = A.astype(np::dtype::get_builtin<int>());
+  auto out = np_to_shogun_labels<float64_t>(A);
+  std::cout << "Num samples: " << out->get_num_labels() << std::endl;
+  out->get_labels().display_vector();
+
+}
+
+void test_conversion_shogun_feats(np::ndarray const& A)
+{
+
+  auto out = np_to_shogun_feats<double>(A);
+  std::cout << "Num features: " << out->get_num_features() << std::endl;
+  std::cout << "Num samples: " << out->get_num_vectors() << std::endl;
+  for(int i=0; i < out->get_num_vectors(); i++){
+    out->get_feature_vector(i).display_vector();
+  }
+
+}
+
+void test_conversion_itk (np::ndarray const& inputImage_np,
                       std::string const& inputImageStr,
                       std::string const& outputImageStr_itk_rgb,
                       std::string const& outputImageStr_itk_real,

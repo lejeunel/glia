@@ -18,8 +18,13 @@
 #include "itkRGBToLuminanceImageFilter.h"
 #include "type/tuple.hxx"
 #include "hmt/bc_feat.hxx"
+#include <shogun/lib/SGMatrix.h>
+#include <shogun/features/DenseFeatures.h>
+#include <shogun/labels/BinaryLabels.h>
+#include <shogun/base/some.h>
 
 using namespace glia;
+namespace sg = shogun;
 namespace np = boost::python::numpy;
 namespace bp = boost::python;
 
@@ -191,6 +196,7 @@ np_to_itk_rgb(const np::ndarray & inputArray) {
 
   return importFilter->GetOutput();
 }
+
 RealImage<DIMENSION>::Pointer
 np_to_itk_real(const np::ndarray & inputArray) {
   using InputImageType = RgbImage;

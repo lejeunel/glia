@@ -11,5 +11,6 @@
 #include "hmt/main_merge_order_pb.cxx"
 #include "hmt/main_bc_feat.cxx"
 #include "hmt/main_bc_label_ri.cxx"
+#include "ml/rf/main_train_rf.cxx"
 
 #endif

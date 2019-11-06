@@ -15,31 +15,36 @@ int nNodeLayer2 = 10;  // Only used if bcType == 2
 std::vector<std::string> bcModelFiles;
 std::string bcFeatMinMaxFile;  // Only used if features need normalizing
 std::vector<double> bcModelDistributorArgs;
-std::string segImageFile;
-std::string maskImageFile;
-std::string pbImageFile;
+// std::string segImageFile;
+// std::string maskImageFile;
+// std::string pbImageFile;
 std::vector<ImageFileHistPair> rbImageFiles;
 std::vector<ImageFileHistPair> rlImageFiles;
 std::vector<ImageFileHistPair> rImageFiles;
 std::vector<ImageFileHistPair> bImageFiles;
 std::vector<double> boundaryThresholds;
-bool normalizeShape = false;
-bool useLogShape = false;
-bool useSimpleFeatures = false;
-std::string mergeOrderFile;
-std::string saliencyFile;
-std::string bcFeatFile;
+// bool normalizeShape = false;
+// bool useLogShape = false;
+// bool useSimpleFeatures = false;
+// std::string mergeOrderFile;
+// std::string saliencyFile;
+// std::string bcFeatFile;
 
-bool operation ()
+bool merge_order_bc_operation(bp::list const& bcModels,
+                              np::ndarray const& spLabels, // SP labels
+                              bp::list const& images, // LAB, HSV, SIFT codes, etc..
+                              np::ndarray const& gpbImage, //gPb, UCM, etc..
+                              bp::list const& histogramBins,
+                              bp::list const& histogramLowerValues,
+                              bp::list const& histogramHigherValues,
+                              bp::list const& boundaryShapeThresholds,
+                              bool const& normalizeSizeLength,
+                              bool const& useLogOfShapes,
+                              bool useSimpleFeatures)
 {
-  auto segImage = readImage<LabelImage<DIMENSION>>(segImageFile);
-  double normalizingArea =
-      normalizeShape ? getImageVolume(segImage) : 1.0;
-  double normalizingLength =
-      normalizeShape ? getImageDiagonal(segImage) : 1.0;
-  auto mask = maskImageFile.empty() ?
-      LabelImage<DIMENSION>::Pointer(nullptr) :
-      readImage<LabelImage<DIMENSION>>(maskImageFile);
+
+  auto mask = LabelImage<DIMENSION>::Pointer(nullptr);
+
   RealImage<DIMENSION>::Pointer pbImage;
   std::vector<ImageHistPair<RealImage<DIMENSION>::Pointer>>
       rImages, rlImages, bImages;
@@ -95,34 +100,20 @@ bool operation ()
   };
   std::shared_ptr<opt::TFunction<std::vector<FVal>>> bc;
   std::vector<std::vector<FVal>> bcfMinMax;
-  if (bcType == 1) {  // Random forest
-    if (bcModelFiles.size() == 1) {
-      bc = std::make_shared<alg::RandomForest>(
-          BC_LABEL_MERGE, bcModelFiles.front());
-    } else {
-      if (bcModelDistributorArgs.size() != 3)
-      { perr("Error: model distributor needs 3 arguments..."); }
-      bc = std::make_shared<alg::EnsembleRandomForest>(
-          BC_LABEL_MERGE, bcModelFiles,
-          opt::ThresholdModelDistributor<FVal>(
-              bcModelDistributorArgs[0], bcModelDistributorArgs[1],
-              bcModelDistributorArgs[2]));
-    }
-  } else if (bcType == 2) {  // MLP2
-    readData(bcfMinMax, bcFeatMinMaxFile);
-    if (bcModelFiles.size() == 1) {
-      bc = std::make_shared<alg::MLP2v>(
-          nNodeLayer1, nNodeLayer2, bcModelFiles.front());
-    } else {
-      if (bcModelDistributorArgs.size() != 3)
-      { perr("Error: model distributor needs 3 arguments..."); }
-      bc = std::make_shared<alg::EnsembleMLP2v>(
-          nNodeLayer1, nNodeLayer2, bcModelFiles,
-          opt::ThresholdModelDistributor<FVal>(
-              bcModelDistributorArgs[0], bcModelDistributorArgs[1],
-              bcModelDistributorArgs[2]));
-    }
-  } else { perr("Error: unsupported classifier type..."); }
+
+  if (bcModelFiles.size() == 1) {
+    bc = std::make_shared<alg::RandomForest>(
+        BC_LABEL_MERGE, bcModelFiles.front());
+} else {
+    if (bcModelDistributorArgs.size() != 3)
+    { perr("Error: model distributor needs 3 arguments..."); }
+    bc = std::make_shared<alg::EnsembleRandomForest>(
+        BC_LABEL_MERGE, bcModelFiles,
+        opt::ThresholdModelDistributor<FVal>(
+            bcModelDistributorArgs[0], bcModelDistributorArgs[1],
+            bcModelDistributorArgs[2]));
+}
+
   // Boundary predictor
   std::vector<FVal> tmpData;
   auto fBcPred = [&bc, &bcfMinMax, &tmpData](
@@ -137,6 +128,7 @@ bool operation ()
     }
     return bc->operator()(data);
   };
+
   // Generate merging orders
   std::vector<TTriple<Label>> order;
   std::vector<double> saliencies;

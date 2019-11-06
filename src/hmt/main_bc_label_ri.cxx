@@ -29,9 +29,10 @@ struct NodeData {
   int bcLabel = BC_LABEL_MERGE;
 };
 
-//For a given merge order and saliency metric, compute for each clique
-//a label denoting the merge split decision
+// This corresponds to section III-C of the paper
 
+//For a given merge order and saliency metric, compute for each clique
+//a merge(+1)/split(-1) label
 
 // Parameters
 
@@ -48,14 +49,14 @@ struct NodeData {
 //Maximum precision drop allowed for merge [default: 1.0]")
 
 np::ndarray bc_label_ri_operation(bp::list const& mergeOrderList,
-                              np::ndarray const& labels,
-                              np::ndarray const& groundtruth,
-                              np::ndarray const& maskArray,
-                              bool const& usePairF1,
-                              int const& globalOpt,
-                              bool const& optSplit,
-                              bool const& tweak,
-                              double const& maxPrecDrop)
+                                  np::ndarray const& labels,
+                                  np::ndarray const& groundtruth,
+                                  np::ndarray const& maskArray,
+                                  bool const& usePairF1,
+                                  int const& globalOpt,
+                                  bool const& optSplit,
+                                  bool const& tweak,
+                                  double const& maxPrecDrop)
 {
 
   using LabelImageType =  LabelImage<DIMENSION>;

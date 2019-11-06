@@ -6,6 +6,7 @@
 #include <boost/python/class.hpp>
 #include <boost/python/overloads.hpp>
 #include <boost/python/return_internal_reference.hpp>
+#include <shogun/base/init.h>
 #include "pyglia.hxx"
 
 namespace bp = boost::python;
@@ -16,12 +17,13 @@ BOOST_PYTHON_MODULE(libglia)
 {
   Py_Initialize();
   np::initialize();
+  shogun::init_shogun_with_defaults();
 
   bp::def("watershed", watershed_operation,
       bp::args("image",
                "level",
                "relabel"),
-      "foo's docstring");
+      "Generate watershed segmentation");
 
   bp::def("pre_merge", pre_merge_operation,
       bp::args("label",
@@ -29,13 +31,13 @@ BOOST_PYTHON_MODULE(libglia)
                "sizeThresholds",
                "rpbThreshold",
                "relabel"),
-      "foo's docstring");
+      "Merge labels to eliminate small elements");
 
   bp::def("merge_order_pb", merge_order_pb_operation,
       bp::args("label",
                "pbArray",
                "bd_intens_stats_type"),
-      "foo's docstring");
+      "Perform greedy merge according to boundary probability");
 
   bp::def("bc_feat", bc_feat_operation,
       bp::args("mergeList",
@@ -51,7 +53,17 @@ BOOST_PYTHON_MODULE(libglia)
                "boundaryShapeThresholds",
                "normalizesizelength",
                "useLogOfShapes"),
-      "foo's docstring");
+      "Generate features for boundary classifier");
+
+  bp::def("train_rf", train_rf_operation,
+      bp::args("X",
+               "Y",
+               "n_trees",
+               "node_size",
+               "sample_size_ratio",
+               "num_features",
+               "balance"),
+      "Train RF classifier");
 
   bp::def("bc_label_ri", bc_label_ri_operation,
       bp::args("mergeOrderList",
@@ -63,14 +75,22 @@ BOOST_PYTHON_MODULE(libglia)
                "optSplit",
                "tweak",
                "maxPrecDrop"),
-      "foo's docstring");
+      "Generate for each clique a label indicating split/merge");
 
-  bp::def("test_conversion", test_conversion,
+  bp::def("test_conversion_shogun_feats", test_conversion_shogun_feats,
+      bp::args("A"),
+      "Test ndarray to armadillo matrix");
+
+  bp::def("test_conversion_shogun_labels", test_conversion_shogun_labels,
+      bp::args("A"),
+      "Test ndarray to armadillo matrix");
+
+  bp::def("test_conversion_itk", test_conversion_itk,
       bp::args("inputImage_np",
                "inputImageStr",
                "outputImageStr_itk_rgb",
                "outputImageStr_itk_real",
                "outputImageStr_np_rgb",
                "outputImageStr_np_real"),
-      "foo's docstring");
+      "Test ndarray to ITK image");
 }

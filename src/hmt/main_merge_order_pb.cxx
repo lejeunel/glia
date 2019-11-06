@@ -48,31 +48,7 @@ bp::tuple merge_order_pb_operation (np::ndarray const& labelArray,
         TBoundaryTable<std::pair<double, int>, RegionMap>::iterator>);
   } else { perr("Error: unsupported boundary stats type..."); }
 
-  //if (!mergeOrderFile.empty()) { writeData(mergeOrderFile, order, "\n"); }
-  //if (!saliencyFile.empty()) { writeData(saliencyFile, saliencies, "\n"); }
-
   return bp::make_tuple(vector_triple_to_np<Label>(order),
                         vector_to_np<double>(saliencies));
 }
 
-
-//int main (int argc, char* argv[])
-//{
-//  bpo::options_description opts("Usage");
-//  opts.add_options()
-//      ("help", "Print usage info")
-//      ("segImage,s", bpo::value<std::string>(&segImageFile)->required(),
-//       "Input initial segmentation image file name")
-//      ("pbImage,p", bpo::value<std::string>(&pbImageFile)->required(),
-//       "Input boundary probability image file name")
-//      ("maskImage,m", bpo::value<std::string>(&maskImageFile),
-//       "Input mask image file name (optional)")
-//      ("type,t", bpo::value<int>(&type),
-//       "Boundary intensity stats type (1: median, 2: mean) [default: 1]")
-//      ("mergeOrder,o", bpo::value<std::string>(&mergeOrderFile),
-//       "Output merging order file name (optional)")
-//      ("saliency,y", bpo::value<std::string>(&saliencyFile),
-//       "Output merging saliency file name (optional)");
-//  return parse(argc, argv, opts) && operation() ?
-//      EXIT_SUCCESS : EXIT_FAILURE;
-//}

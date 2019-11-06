@@ -1,0 +1,27 @@
+watershed-level : 5
+n-ori : 8
+k-mean-num : 64
+sigma-sm : 2.0
+sigma-lg : 2.83
+
+daisy-step : 1
+daisy-radius : 58
+daisy-rings : 2
+daisy-histograms : 6
+daisy-orientations : 8
+hist-bins-daisy : 64
+
+codebook-size: 256
+kmeans-thresh: 0.0001
+kmeans-n-samples: 2000
+
+hist-bins-color : 10
+hist-bins-texture : 64
+initial-saliency : 1.0
+saliency-bias : 1.0
+normalize-length : true
+use-log-shape : false
+
+gpb-max-shape: 300
+
+cuda: False
