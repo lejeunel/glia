@@ -2,9 +2,10 @@
 #include "util/struct_merge.hxx"
 #include "util/text_io.hxx"
 #include "util/text_cmd.hxx"
-#include "np_helpers.hxx"
 #include "glia_image.hxx"
 #include "type/tuple.hxx"
+#include "pyglia.hxx"
+#include "np_helpers.hxx"
 
 using namespace glia;
 namespace np = boost::python::numpy;
@@ -17,7 +18,7 @@ namespace bp = boost::python;
 //"Output merging order file name (optional)")
 //"Output merging saliency file name (optional)");
 
-bp::tuple merge_order_pb_operation (np::ndarray const& labelArray,
+bp::tuple MyHmt::merge_order_pb_operation (np::ndarray const& labelArray,
                                     np::ndarray const& pbArray,
                                     int const & bd_intens_stats_type)
 {
@@ -28,8 +29,8 @@ bp::tuple merge_order_pb_operation (np::ndarray const& labelArray,
   std::vector<TTriple<Label>> order;
   std::vector<double> saliencies;
 
-  LabelImageType::Pointer segImage = np_to_itk_label(labelArray);
-  RealImageType::Pointer pbImage = np_to_itk_real(pbArray);
+  LabelImageType::Pointer segImage = nph::np_to_itk_label(labelArray);
+  RealImageType::Pointer pbImage = nph::np_to_itk_real(pbArray);
 
   LabelImageType::Pointer mask = LabelImageType::Pointer(nullptr);
 
@@ -48,7 +49,7 @@ bp::tuple merge_order_pb_operation (np::ndarray const& labelArray,
         TBoundaryTable<std::pair<double, int>, RegionMap>::iterator>);
   } else { perr("Error: unsupported boundary stats type..."); }
 
-  return bp::make_tuple(vector_triple_to_np<Label>(order),
-                        vector_to_np<double>(saliencies));
+  return bp::make_tuple(nph::vector_triple_to_np<Label>(order),
+                        nph::vector_to_np<double>(saliencies));
 }
 

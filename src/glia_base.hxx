@@ -62,7 +62,7 @@ const double LOG_FEPS = 0.0;
 const uint FLT_PREC = 8;
 const uint MAX_STR_LEN = 1024;
 
-int DO_WEIRD_STUFF = 0;  // Globally reserved flag
+// int DO_WEIRD_STUFF = 0;  // Globally reserved flag
 
 inline void perr (std::string const& msg) {
   std::cerr << msg << std::endl;

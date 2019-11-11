@@ -4,7 +4,9 @@
 #include "util/text_cmd.hxx"
 #include "util/mp.hxx"
 #include "hmt/hmt_util.hxx"
+#include "pyglia.hxx"
 #include "np_helpers.hxx"
+
 using namespace glia;
 using namespace glia::hmt;
 
@@ -49,7 +51,7 @@ useLogOfShapes: see paper, default to true
 ---------------------------------------------------------*/
 
 
-np::ndarray bc_feat_operation (bp::list const& mergeOrderList,
+np::ndarray MyHmt::bc_feat_operation (bp::list const& mergeOrderList,
                                np::ndarray const& saliencies,
                                np::ndarray const& spLabels, // SP labels
                                bp::list const& images, // LAB, HSV, SIFT codes, etc..
@@ -73,14 +75,14 @@ np::ndarray bc_feat_operation (bp::list const& mergeOrderList,
     vecCodePairs, vecImagePairs, vecBoundaryPairs, vecLabelPairs;
 
   // Set histogram ranges and bins
-  vecImagePairs = lists_to_image_hist_pair(images,
+  vecImagePairs = nph::lists_to_image_hist_pair(images,
                                 bp::extract<int>(histogramBins[1]),
                                 bp::extract<double>(histogramLowerValues[1]),
                                 bp::extract<double>(histogramHigherValues[1]));
 
-  LabelImageType::Pointer mask = LabelImageType::Pointer(nullptr);
-  LabelImageType::Pointer spLabels_itk = np_to_itk_label(spLabels);
-  RealImageType::Pointer gpbImage_itk = np_to_itk_real(gpbImage);
+  auto mask = LabelImageType::Pointer(nullptr);
+  auto spLabels_itk = nph::np_to_itk_label(spLabels);
+  auto gpbImage_itk = nph::np_to_itk_real(gpbImage);
 
   // Set up normalizing area/length
   double normalizingArea =
@@ -88,11 +90,11 @@ np::ndarray bc_feat_operation (bp::list const& mergeOrderList,
   double normalizingLength =
       normalizeShape ? getImageDiagonal(spLabels_itk) : 1.0;
 
-  auto order = np_to_vector_triple<Label>(mergeOrderList);
+  auto order = nph::np_to_vector_triple<Label>(mergeOrderList);
 
-  auto saliencies_vec = np_to_vector<double>(saliencies);
+  auto saliencies_vec = nph::np_to_vector<double>(saliencies);
   std::unordered_map<Label, double> saliencyMap;
-  if (!is_empty(saliencies)) {
+  if (!nph::is_empty(saliencies)) {
     genSaliencyMap(saliencyMap,
                    order,
                    saliencies_vec,
@@ -168,5 +170,5 @@ np::ndarray bc_feat_operation (bp::list const& mergeOrderList,
     selectFeatures(pickedFeats[i], bfeats[i]);
   }
 
-  return vector_2d_to_np<FVal>(pickedFeats);
+  return nph::vector_2d_to_np<FVal>(pickedFeats);
 }

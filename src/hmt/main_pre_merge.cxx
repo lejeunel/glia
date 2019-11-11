@@ -2,10 +2,11 @@
 #include "util/stats.hxx"
 #include "util/image_io.hxx"
 #include "util/text_cmd.hxx"
-#include "np_helpers.hxx"
 #include "glia_image.hxx"
 #include <itkImageConstIterator.h>
 #include "itkImageLinearIteratorWithIndex.h"
+#include "pyglia.hxx"
+#include "np_helpers.hxx"
 
 using namespace glia;
 namespace np = boost::python::numpy;
@@ -16,20 +17,20 @@ namespace bp = boost::python;
 //  "Region size threshold(s) (e.g. -t 50 100)")
 //  "Region average boundary probability threshold")
 //  "Whether to relabel image to consecutive labels [default: false]")
-np::ndarray pre_merge_operation (np::ndarray const& labelArray,
+np::ndarray MyHmt::pre_merge_operation (np::ndarray const& labelArray,
                                  np::ndarray const& pbArray,
                                  bp::list const& sizeThresholdsList,
                                  double rpbThreshold,
                                  bool relabel)
 {
 
-  std::vector<int> sizeThresholds = list_to_vector<int>(bp::extract<bp::object>(sizeThresholdsList));
+  std::vector<int> sizeThresholds = nph::list_to_vector<int>(bp::extract<bp::object>(sizeThresholdsList));
 
   using LabelImageType =  LabelImage<DIMENSION>;
   using RealImageType =  RealImage<DIMENSION>;
-  LabelImageType::Pointer segImage = np_to_itk_label(labelArray);
+  LabelImageType::Pointer segImage = nph::np_to_itk_label(labelArray);
 
-  RealImageType::Pointer pbImage = np_to_itk_real(pbArray);
+  RealImageType::Pointer pbImage = nph::np_to_itk_real(pbArray);
 
   //typedef itk::ImageFileWriter<LabelImageType> Writer;
   //auto writer = Writer::New();
@@ -105,5 +106,5 @@ np::ndarray pre_merge_operation (np::ndarray const& labelArray,
   //      (outputImageFile, segImage, compress);
   //}
   //else { writeImage(outputImageFile, segImage, compress); }
-  return itk_to_np<LabelImageType, Label>(segImage);
+  return nph::itk_to_np<LabelImageType, Label>(segImage);
 }

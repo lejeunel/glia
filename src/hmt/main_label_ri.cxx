@@ -88,36 +88,3 @@ bool operation (std::string const& bcLabelFile,
 }
 
 
-int main (int argc, char* argv[])
-{
-  std::string bcLabelFile, rcLabelFile, mergeOrderFile, segImageFile,
-      truthImageFile, maskImageFile;
-  bool tweak = false;
-  double maxPrecDrop = 1.0, minJIndex = 0.0;
-  bpo::options_description opts("Usage");
-  opts.add_options()
-      ("help", "Print usage info")
-      ("segImage,s", bpo::value<std::string>(&segImageFile)->required(),
-       "Input initial segmentation image file name")
-      ("mergeOrder,o", bpo::value<std::string>(&mergeOrderFile)->required(),
-       "Input merging order file name")
-      ("truthImage,t", bpo::value<std::string>(&truthImageFile)->required(),
-       "Input ground truth segmentation image file name")
-      ("maskImage,m", bpo::value<std::string>(&maskImageFile),
-       "Input mask image file name (optional)")
-      ("tweak,w", bpo::value<bool>(&tweak),
-       "Whether to tweak conditions for thick boundaries [default: false]")
-      ("mpd,d", bpo::value<double>(&maxPrecDrop),
-       "Maximum precision drop allowed for merge [default: 1.0]")
-      ("mji,j", bpo::value<double>(&minJIndex),
-       "Minimum Jaccard index allowed for region [default: 0.0]")
-      ("bclabel,l", bpo::value<std::string>(&bcLabelFile),
-       "Output boundary label file name (optional)")
-      ("rclabel,r", bpo::value<std::string>(&rcLabelFile),
-       "Output region label file name (optional)");
-  return
-      parse(argc, argv, opts) &&
-      operation(bcLabelFile, rcLabelFile, segImageFile, mergeOrderFile,
-                truthImageFile, maskImageFile, tweak, maxPrecDrop,
-                minJIndex)? EXIT_SUCCESS: EXIT_FAILURE;
-}

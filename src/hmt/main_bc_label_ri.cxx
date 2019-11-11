@@ -8,20 +8,11 @@
 #include "util/text_io.hxx"
 #include "util/text_cmd.hxx"
 #include "util/mp.hxx"
+#include "pyglia.hxx"
 #include "np_helpers.hxx"
+
 using namespace glia;
 using namespace glia::hmt;
-
-//std::string bcLabelFile;
-//std::string segImageFile;
-//std::string mergeOrderFile;
-//std::string truthImageFile;
-//std::string maskImageFile;
-//bool usePairF1 = true;
-//bool optSplit = false;
-//int globalOpt = 0;  // 0: Bypass, 1: RCC by merge, 2: RCC by split
-//bool tweak = false;
-//double maxPrecDrop = 1.0;
 
 struct NodeData {
   Label label;
@@ -48,29 +39,29 @@ struct NodeData {
 //Whether to tweak conditions for thick boundaries [default: false]")
 //Maximum precision drop allowed for merge [default: 1.0]")
 
-np::ndarray bc_label_ri_operation(bp::list const& mergeOrderList,
-                                  np::ndarray const& labels,
-                                  np::ndarray const& groundtruth,
-                                  np::ndarray const& maskArray,
-                                  bool const& usePairF1,
-                                  int const& globalOpt,
-                                  bool const& optSplit,
-                                  bool const& tweak,
-                                  double const& maxPrecDrop)
+np::ndarray MyHmt::bc_label_ri_operation(bp::list const& mergeOrderList,
+                                np::ndarray const& labels,
+                                np::ndarray const& groundtruth,
+                                np::ndarray const& maskArray,
+                                bool const& usePairF1,
+                                int const& globalOpt,
+                                bool const& optSplit,
+                                bool const& tweak,
+                                double const& maxPrecDrop)
 {
 
   using LabelImageType =  LabelImage<DIMENSION>;
   using RealImageType =  RealImage<DIMENSION>;
 
-  auto order = np_to_vector_triple<Label>(mergeOrderList);
+  auto order = nph::np_to_vector_triple<Label>(mergeOrderList);
 
-  LabelImageType::Pointer segImage = np_to_itk_label(bp::extract<np::ndarray>(labels));
+  LabelImageType::Pointer segImage = nph::np_to_itk_label(bp::extract<np::ndarray>(labels));
 
-  LabelImageType::Pointer truthImage = np_to_itk_label(bp::extract<np::ndarray>(groundtruth));
+  LabelImageType::Pointer truthImage = nph::np_to_itk_label(bp::extract<np::ndarray>(groundtruth));
 
   LabelImageType::Pointer mask = (maskArray.get_nd() == 1)?
     LabelImageType::Pointer(nullptr):
-    np_to_itk_label(maskArray);
+    nph::np_to_itk_label(maskArray);
 
   typedef TRegionMap<Label, Point<DIMENSION>> RegionMap;
   RegionMap rmap(segImage, mask, order, false);
@@ -186,5 +177,5 @@ np::ndarray bc_label_ri_operation(bp::list const& mergeOrderList,
     { if (!node.isLeaf()) { bcLabels.push_back(node.data.bcLabel); } }
   }
   //if (!bcLabelFile.empty()) { writeData(bcLabelFile, bcLabels, "\n"); }
-  return vector_to_np<int>(bcLabels);
+  return nph::vector_to_np<int>(bcLabels);
 }

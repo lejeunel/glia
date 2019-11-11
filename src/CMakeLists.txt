@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8)
 
 # For rtags
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
+add_link_options(-W -Wno-undef)
 set( CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} )
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -16,14 +16,6 @@ option(GLIA_BUILD_LINK3D "Build 3D linking module. (Requires GLIA_3D=OFF.)" ON)
 option(GLIA_BUILD_GADGET "Build gadget module." ON)
 option(GLIA_BUILD_ML_RF "Build random forest module. (Requires 3rd party random forest code in place.)" OFF)
 
-if(GLIA_BUILD_ML_RF)
-  set(RF_SRC_DIR "" CACHE FILEPATH "Random forest source code directory")
-endif(GLIA_BUILD_ML_RF)
-
-if(GLIA_3D)
-  add_definitions(-DGLIA_3D)
-endif(GLIA_3D)
-
 if(GLIA_MT)
   find_package(OpenMP)
   if(OPENMP_FOUND)
@@ -33,13 +25,16 @@ if(GLIA_MT)
   endif(OPENMP_FOUND)
 endif(GLIA_MT)
 
-include_directories(.)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 
 find_package(ITK 5.0 REQUIRED)
 include(${ITK_USE_FILE})
 
-find_package( Boost 1.58.0 COMPONENTS python3 numpy3 REQUIRED )
+find_package( Boost 1.58.0 REQUIRED COMPONENTS python3 numpy3 program_options)
+# SET(Boost_USE_STATIC_LIBS ON)
+# SET(Boost_USE_MULTITHREADED ON)
+# SET(Boost_USE_STATIC_RUNTIME ON)
+
 find_package(PythonLibs 3 REQUIRED)
 find_package (Eigen3 3.3 REQUIRED)
 find_package(Shogun REQUIRED NO_MODULE)
@@ -56,7 +51,21 @@ endif(BOOST_MULTITHREADED)
 
 link_directories(${Boost_LIBRARY_DIR})
 
-add_library(glia SHARED pyglia.hxx pyglia.cxx )
+file(GLOB SRC
+    *.hxx
+    *.cxx
+    hmt/*.hxx
+    hmt/*.cxx
+    type/*.hxx
+    type/*.cxx
+    util/*.hxx
+    util/*.cxx
+    alg/*.hxx
+    alg/*.cxx
+)
+
+ADD_LIBRARY(glia SHARED ${SRC} pyglia.hxx pyglia.cxx )
+
 target_link_libraries(glia ${ITK_LIBRARIES} ${PYTHON_LIBRARIES} ${Boost_LIBRARIES} shogun)
 
 
