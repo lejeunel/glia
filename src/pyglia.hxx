@@ -1,6 +1,7 @@
 #ifndef _pyglia_hxx_
 #define _pyglia_hxx_
 
+#include "shogun_helpers.hxx"
 #include "np_helpers.hxx"
 #include <boost/python.hpp>
 #include <boost/python/numpy.hpp>
@@ -12,12 +13,13 @@ using namespace boost;
 
 class MyHmt {
 private:
-  std::shared_ptr<glia::alg::RandomForest> bc;
+  std::shared_ptr<glia::alg::MyRandomForest> bc;
   int n_trees;
   int num_features;
   double sample_size_ratio;
   bool balance;
   int n_cats;
+
 
 public:
   MyHmt(int n_cats_=3,
@@ -29,9 +31,9 @@ public:
     balance(balance_), n_cats(n_cats_){
     std::cout << "in MyHmt constructor" << std::endl;
     std::cout << "n_trees: " << n_trees << std::endl;
-    bc = std::make_shared<glia::alg::RandomForest>(n_cats, n_trees_,
-                                                   sample_size_ratio, num_features,
-                                                   balance);
+    bc = std::make_shared<glia::alg::MyRandomForest>(n_cats, n_trees_,
+                                                     sample_size_ratio, num_features,
+                                                     balance);
 
   };
 

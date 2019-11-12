@@ -1,5 +1,7 @@
+#include "shogun_helpers.hxx"
 #include "pyglia.hxx"
 #include <boost/python.hpp>
+#include <boost/python/register_ptr_to_python.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/python/args.hpp>
 #include <boost/python/class.hpp>
@@ -10,6 +12,7 @@
 
 namespace bp = boost::python;
 namespace np = boost::python::numpy;
+
 BOOST_PYTHON_MODULE(libglia) {
   Py_Initialize();
   np::initialize();

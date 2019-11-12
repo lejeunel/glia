@@ -15,11 +15,12 @@ namespace sg = shogun;
 namespace np = boost::python::numpy;
 namespace bp = boost::python;
 
-typedef sg::MulticlassLabels MulticlassLabels;
-typedef sg::DenseFeatures<double> Features;
-typedef sg::DenseSubSamplesFeatures<double> SubFeatures;
-typedef std::shared_ptr<sg::DenseSubSamplesFeatures<double>> SubFeaturesPtr;
-typedef std::shared_ptr<Features> FeaturesPtr;
+using namespace shogun;
+
+typedef DenseFeatures<double> Features;
+typedef DenseSubSamplesFeatures<double> SubFeatures;
+typedef std::shared_ptr<DenseSubSamplesFeatures<double>> SubFeaturesPtr;
+typedef std::shared_ptr<DenseFeatures<double>> FeaturesPtr;
 typedef std::shared_ptr<MulticlassLabels> MulticlassLabelsPtr;
 
 // Get the median of an unordered set of numbers of arbitrary
@@ -32,11 +33,10 @@ public:
   int n_cats = 3;
   double threshold;
   int n_dims = 0;
-
-private:
-  std::vector<SubFeaturesPtr> feats;
+  FeaturesPtr feats;
 
 public:
+  CategorizedFeatures() {}
   CategorizedFeatures(FeaturesPtr feats_, int const &idx_first,
                       int const &idx_second) {
 
@@ -53,7 +53,7 @@ public:
 
     n_dims = mat.get_column(0).size();
     std::cout << "n_dims: " << n_dims << std::endl;
-    
+
     threshold = median<double>(&first_vec.front(),
                                &first_vec.front() + first_vec.size());
     std::cout << "median: " << threshold << std::endl;
@@ -77,27 +77,19 @@ public:
     }
     std::cout << "store ok" << std::endl;
 
-    // populate
-    for (int i = 0; i < indices.size(); ++i) {
-      std::cout << "populate category: " << i << " with " << indices[i].size()
-                << " vectors" << std::endl;
-      // FeaturesPtr out(new Features(mat));
-
-      SubFeaturesPtr f(
-          new SubFeatures(feats_, sg::SGVector<int>(&indices[i].front(),
-                                                          indices[i].size())));
-      feats.push_back(f);
-    }
-    std::cout << "populate ok" << std::endl;
+    feats = feats_;
   }
 
-  SubFeaturesPtr get(int const &cat) const { return feats[cat]; }
+  SubFeaturesPtr get(int const &cat) {
+    auto vec = SGVector<int>(indices[cat].begin(), indices[cat].end());
+    return std::make_shared<SubFeatures>(feats, vec);
+  }
 
-  MulticlassLabelsPtr filter_labels(MulticlassLabelsPtr labels, int const& cat) const {
+  MulticlassLabelsPtr filter_labels(MulticlassLabelsPtr labels,
+                                    int const &cat) const {
 
     labels->remove_all_subsets();
-    auto idx = sg::SGVector<int>(indices[cat].begin(),
-                                 indices[cat].end());
+    auto idx = SGVector<int>(indices[cat].begin(), indices[cat].end());
     labels->add_subset(idx);
     return labels;
   }
@@ -111,6 +103,8 @@ public:
     }
   }
 };
+
+typedef std::shared_ptr<CategorizedFeatures> CategorizedFeaturesPtr;
 
 template <typename T> T median(T *begin, T *end) {
   std::vector<T> data(begin, end);
@@ -130,10 +124,13 @@ template <typename T> std::vector<T> get_sorted_uniques(T *v, int const &len) {
 template <typename Tx>
 MulticlassLabelsPtr np_to_shogun_labels(np::ndarray const &X) {
 
-  np::ndarray X_ = X.astype(np::dtype::get_builtin<Tx>());
-  Tx *data = reinterpret_cast<Tx *>(X_.get_data());
-  // auto labels = new sg::CMulticlassLabels(X_.shape(0));
-  MulticlassLabelsPtr labels(new MulticlassLabels(X_.shape(0)));
+  // np::ndarray X_ = X.astype(np::dtype::get_builtin<Tx>());
+  // auto X_copy = X_.copy();
+  // Tx *data = reinterpret_cast<Tx *>(X_copy.get_data());
+
+  Tx *data = reinterpret_cast<Tx *>(X.get_data());
+
+  auto labels = std::make_shared<MulticlassLabels>(X.shape(0));
 
   for (int i = 0; i < labels->get_num_labels(); ++i) {
     labels->set_int_label(i, data[i]);
@@ -142,15 +139,16 @@ MulticlassLabelsPtr np_to_shogun_labels(np::ndarray const &X) {
 }
 
 template <typename Tx> FeaturesPtr np_to_shogun_feats(np::ndarray const &X) {
+  // auto X_copy = X.copy();
+  // Tx *data = reinterpret_cast<Tx *>(X_copy.get_data());
   Tx *data = reinterpret_cast<Tx *>(X.get_data());
-  // auto mat = sg::SGMatrix<Tx>(data, X.shape(1), X.shape(0), true);
-  // auto out = sg::wrap(new sg::CDenseFeatures<double>(mat));
-  FeaturesPtr out(new Features(data, X.shape(1), X.shape(0)));
+  auto out = std::make_shared<DenseFeatures<double>>(data, X.shape(1), X.shape(0));
   return out;
 }
 
-inline sg::SGVector<double>
-make_balanced_weight_vector(MulticlassLabelsPtr Y, sg::SGVector<double> &weights) {
+inline SGVector<double>
+make_balanced_weight_vector(MulticlassLabelsPtr Y,
+                            SGVector<double> &weights) {
 
   auto Yvec = Y->get_labels();
   // Yvec.display_vector();

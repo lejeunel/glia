@@ -22,26 +22,28 @@ num of features to examine at each node. 0 for sqrt(D) balance: Whether to
 balance samples
 ---------------------------------------------------------*/
 
-bool MyHmt::train_rf_operation(np::ndarray const &X, np::ndarray const &Y) {
+bool MyHmt::train_rf_operation(np::ndarray const &X_, np::ndarray const &Y_) {
 
   // sg::init_shogun_with_defaults();
-  if (X.shape(0) != Y.shape(0) || Y.get_nd() != 1) {
+  if (X_.shape(0) != Y_.shape(0) || Y_.get_nd() != 1) {
     glia::perr("Error: incorrect matrices dimension...");
   }
 
-  auto Xsg = np_to_shogun_feats<double>(X);
-  auto Ysg = np_to_shogun_labels<int>(Y);
+  auto X = np_to_shogun_feats<double>(X_);
+  auto Y = np_to_shogun_labels<int>(Y_);
 
-  auto cat_X = CategorizedFeatures(Xsg, 0, 1);
+  std::cout << "Xsg count: " << X.use_count() << std::endl;
+  std::cout << "Ysg count: " << Y.use_count() << std::endl;
 
-  // cat_X.display_feats();
+  auto X_cat = std::make_shared<CategorizedFeatures>(X, 0, 1);
 
-  // bc.get_params(0);
-  // std::cout << "ok" << std::endl;
-  // auto file = new sg::CSerializableAsciiFile("serialized.dat", 'w');
-  // bc->rand_forest[0]->save_serializable(file);
-  // file->print_serializable();
-  // file->close();
+  auto test = X_cat->get(0);
+  auto test1 = X_cat->get(1);
+  auto test2 = X_cat->get(2);
+
+  std::cout << "cat_X count: " << X_cat.use_count() << std::endl;
+
+  X_cat->display_feats();
 
   // bc->rand_forest[0]->set_labels(Ysg.get());
   // auto f_type = sg::SGVector<bool>(Xsg->get_num_features());
@@ -55,7 +57,7 @@ bool MyHmt::train_rf_operation(np::ndarray const &X, np::ndarray const &Y) {
   // bc->rand_forest[0]->set_labels(Ysg.get());
   // std::cout << "num_bags: " << bc->rand_forest[0]->get_num_bags() << std::endl;
   // std::cout << "num_bags: " << this->n_trees << std::endl;
-  // bc->train(cat_X, Ysg);
+  bc->train(X_cat, Y);
 
 
   return true;
