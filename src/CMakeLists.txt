@@ -25,7 +25,7 @@ if(GLIA_MT)
   endif(OPENMP_FOUND)
 endif(GLIA_MT)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 
 find_package(ITK 5.0 REQUIRED)
 include(${ITK_USE_FILE})
@@ -65,7 +65,7 @@ file(GLOB SRC
 )
 
 ADD_LIBRARY(glia SHARED ${SRC} pyglia.hxx pyglia.cxx )
-
+set_property(TARGET glia PROPERTY CXX_STANDARD 17)
 target_link_libraries(glia ${ITK_LIBRARIES} ${PYTHON_LIBRARIES} ${Boost_LIBRARIES} shogun)
 
 

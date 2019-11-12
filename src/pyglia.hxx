@@ -27,6 +27,8 @@ public:
         bool const & balance_=true):
     n_trees(n_trees_), num_features(num_features_), sample_size_ratio(sample_size_ratio_),
     balance(balance_), n_cats(n_cats_){
+    std::cout << "in MyHmt constructor" << std::endl;
+    std::cout << "n_trees: " << n_trees << std::endl;
     bc = std::make_shared<glia::alg::RandomForest>(n_cats, n_trees_,
                                                    sample_size_ratio, num_features,
                                                    balance);

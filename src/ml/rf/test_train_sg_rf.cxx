@@ -30,6 +30,7 @@ bool train_rf_operation (np::ndarray const& X,
                          bool const& balance){
 
   sg::init_shogun_with_defaults();
+  // sg::init_shogun();
   if (X.shape(0) != Y.shape(0) || Y.get_nd() != 1)
     { perr("Error: incorrect matrices dimension..."); }
 

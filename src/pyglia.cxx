@@ -1,21 +1,22 @@
 #include "pyglia.hxx"
 #include <boost/python.hpp>
+#include <boost/shared_ptr.hpp>
 #include <boost/python/args.hpp>
 #include <boost/python/class.hpp>
 #include <boost/python/def.hpp>
 #include <boost/python/numpy.hpp>
 #include <boost/python/overloads.hpp>
 #include <boost/python/return_internal_reference.hpp>
-#include <shogun/base/init.h>
 
 namespace bp = boost::python;
 namespace np = boost::python::numpy;
 BOOST_PYTHON_MODULE(libglia) {
   Py_Initialize();
   np::initialize();
-  shogun::init_shogun_with_defaults();
+  // shogun::init_shogun_with_defaults();
+  // shogun::init_shogun();
 
-  bp::class_<MyHmt>("hmt", bp::init<int, int, double, bool>())
+  bp::class_<MyHmt, std::shared_ptr<MyHmt>>("hmt", bp::init<int, int, int, double, bool>())
       .def("watershed", &MyHmt::watershed_operation,
            bp::args("image", "level", "relabel"),
            "Generate watershed segmentation")

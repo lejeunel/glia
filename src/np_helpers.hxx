@@ -15,14 +15,9 @@
 #include <boost/python/numpy.hpp>
 #include <itkImageConstIterator.h>
 #include <memory>
-#include <shogun/base/some.h>
-#include <shogun/features/DenseFeatures.h>
-#include <shogun/labels/BinaryLabels.h>
-#include <shogun/lib/SGMatrix.h>
 #include <vector>
 
 using namespace glia;
-namespace sg = shogun;
 namespace np = boost::python::numpy;
 namespace bp = boost::python;
 
