@@ -42,7 +42,6 @@ struct NodeData {
 np::ndarray MyHmt::bc_label_ri_operation(bp::list const& mergeOrderList,
                                 np::ndarray const& labels,
                                 np::ndarray const& groundtruth,
-                                np::ndarray const& maskArray,
                                 bool const& usePairF1,
                                 int const& globalOpt,
                                 bool const& optSplit,
@@ -59,9 +58,7 @@ np::ndarray MyHmt::bc_label_ri_operation(bp::list const& mergeOrderList,
 
   LabelImageType::Pointer truthImage = nph::np_to_itk_label(bp::extract<np::ndarray>(groundtruth));
 
-  LabelImageType::Pointer mask = (maskArray.get_nd() == 1)?
-    LabelImageType::Pointer(nullptr):
-    nph::np_to_itk_label(maskArray);
+  LabelImageType::Pointer mask = LabelImageType::Pointer(nullptr);
 
   typedef TRegionMap<Label, Point<DIMENSION>> RegionMap;
   RegionMap rmap(segImage, mask, order, false);

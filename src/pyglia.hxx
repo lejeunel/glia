@@ -28,7 +28,6 @@ public:
               int const &num_features_ = 0,
               double const &sample_size_ratio_ = 0.7,
               bool const &balance_ = true) {
-    std::cout << "in MyHmt constructor" << std::endl;
     n_trees = n_trees_;
     num_features = num_features_;
     sample_size_ratio = sample_size_ratio_;
@@ -71,7 +70,7 @@ public:
   };
 
   np::ndarray bc_label_ri_operation(bp::list const &, np::ndarray const &,
-                                    np::ndarray const &, np::ndarray const &,
+                                    np::ndarray const &,
                                     bool const &, int const &, bool const &,
                                     bool const &, double const &);
   np::ndarray bc_feat_operation(bp::list const &, np::ndarray const &,

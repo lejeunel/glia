@@ -77,7 +77,10 @@ class Loader:
         truth = self.truths[idx]
         im = self.imgs[idx]
 
-        feats = np.load(self.feats_paths[idx])
+        feats = None
+        if(self.feats_path is not None):
+            feats = np.load(self.feats_paths[idx])
+
 
         return {'image': self.imgs[idx],
                 'frame_idx': idx,

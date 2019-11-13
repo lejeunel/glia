@@ -12,7 +12,8 @@ def get_params(path='.'):
 
     p.add('-v', help='verbose', action='store_true')
 
-    p.add('--watershed-level', type=float)
+    p.add('--slic-segments', type=int)
+    p.add('--slic-compactness', type=float)
 
     p.add('--n-ori', type=int)
     p.add('--k-mean-num', type=int)

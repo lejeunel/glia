@@ -59,7 +59,7 @@ BOOST_PYTHON_MODULE(libglia) {
            "Return models in JSON format")
 
       .def("bc_label_ri", &MyHmt::bc_label_ri_operation,
-           bp::args("mergeOrderList", "labels", "groundtruth", "mask",
+           bp::args("mergeOrderList", "labels", "groundtruth", 
                     "usePairF1", "globalOpt", "optSplit", "tweak",
                     "maxPrecDrop"),
            "Generate for each clique a label indicating split/merge")

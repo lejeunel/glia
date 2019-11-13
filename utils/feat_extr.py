@@ -10,7 +10,7 @@ import numpy as np
 import os
 from os.path import join as pjoin
 from skimage.feature import daisy
-from skimage import transform
+from skimage import transform, segmentation
 from scipy import cluster
 
 def encode(feats, n_samples, cb_size, thresh):
@@ -27,6 +27,80 @@ def encode(feats, n_samples, cb_size, thresh):
     feats_codes = feats_codes.reshape(orig_shape[0], orig_shape[1])
 
     return feats_codes
+
+def get_features(img, cfg, hed_network):
+    device = torch.device('cuda' if cfg.cuda else 'cpu')
+    img_tnsr = torch.from_numpy(np.rollaxis(img / 255, -1, 0)[None, ...]).to(device)
+    print('Estimating HED contours')
+    contours = hed_network(img_tnsr.float())
+    contours = contours.squeeze().detach().cpu().numpy()
+
+    img_lab = color.rgb2lab(img)
+    img_hsv = color.rgb2hsv(img)
+
+    my_daisy = lambda im : daisy(np.pad(im, cfg.daisy_radius),
+                                step=cfg.daisy_step,
+                                radius=cfg.daisy_radius,
+                                rings=cfg.daisy_rings,
+                                histograms=cfg.daisy_histograms,
+                                orientations=cfg.daisy_orientations)
+    my_encode = lambda f : encode(f,
+                                    cfg.kmeans_n_samples,
+                                    cfg.codebook_size,
+                                    cfg.kmeans_thresh)
+
+    print('Coding texture descriptors to {} words'.format(cfg.codebook_size))
+    daisy_descs = [my_encode(my_daisy(img.mean(axis=-1))),
+                my_encode(my_daisy(img_lab[..., 1])),
+                my_encode(my_daisy(img_lab[..., 2]))
+    ]
+
+    orig_shape = img.shape
+    resized = False
+    if((orig_shape[0] > cfg.gpb_max_shape) or (orig_shape[1] > cfg.gpb_max_shape)):
+        img_ = transform.resize(img, (cfg.gpb_max_shape, cfg.gpb_max_shape))
+        img_ = (img_ * 255).astype(np.uint8)
+        resized = True
+    else:
+        img_ = img
+
+    labels = segmentation.slic(img,
+                                n_segments=cfg.slic_segments,
+                                compactness=cfg.slic_compactness)
+    print('num. of labels: {}'.format(np.unique(labels).size))
+
+    # This is the merge based on boundary probabilities (first tree in the ensemble)
+    order, saliencies = libglia.merge_order_pb(labels.copy(),
+                                                contours,
+                                                2)
+
+    # for each clique, compute features for the boundary classifier
+    bc_feats = libglia.bc_feat(list(order),
+                                saliencies,
+                                labels,
+                                [img_lab, img_hsv] + daisy_descs , 
+                                contours,
+                                [cfg.hist_bins_color,
+                                cfg.hist_bins_color] + 3*[cfg.hist_bins_daisy],
+                                [0., -127., -128., 0., 0., 0., 0., 0., 0.],
+                                [100., 128., 127., 1., 1., 1., 256., 256., 256.],
+                                cfg.initial_saliency,
+                                cfg.saliency_bias,
+                                [0.2, 0.5, 0.8],
+                                cfg.normalize_length,
+                                cfg.use_log_shapes)
+
+    data = {'img': img,
+            'img_hsv': img_hsv,
+            'img_lab': img_lab,
+            'daisy_descs': daisy_descs,
+            'contours': contours,
+            'order': order,
+            'saliencies': saliencies,
+            'labels': labels,
+            'bc_feats': bc_feats}
+
+    return data
 
 
 def main(cfg):
@@ -54,92 +128,11 @@ def main(cfg):
         if(not os.path.exists(path)):
             img = sample['image']
 
-            img_tnsr = torch.from_numpy(np.rollaxis(img / 255, -1, 0)[None, ...]).to(device)
-            print('Estimating HED contours')
-            contours = hed_network(img_tnsr.float())
-            contours = contours.squeeze().detach().cpu().numpy()
-
-            img_lab = color.rgb2lab(img)
-            img_hsv = color.rgb2hsv(img)
-
-            my_daisy = lambda im : daisy(np.pad(im, cfg.daisy_radius),
-                                        step=cfg.daisy_step,
-                                        radius=cfg.daisy_radius,
-                                        rings=cfg.daisy_rings,
-                                        histograms=cfg.daisy_histograms,
-                                        orientations=cfg.daisy_orientations)
-            my_encode = lambda f : encode(f,
-                                          cfg.kmeans_n_samples,
-                                          cfg.codebook_size,
-                                          cfg.kmeans_thresh)
-
-            print('Coding texture descriptors to {} words'.format(cfg.codebook_size))
-            daisy_descs = [my_encode(my_daisy(img.mean(axis=-1))),
-                        my_encode(my_daisy(img_lab[..., 1])),
-                        my_encode(my_daisy(img_lab[..., 2]))
-            ]
-
-            orig_shape = img.shape
-            resized = False
-            if((orig_shape[0] > cfg.gpb_max_shape) or (orig_shape[1] > cfg.gpb_max_shape)):
-                img_ = transform.resize(img, (cfg.gpb_max_shape, cfg.gpb_max_shape))
-                img_ = (img_ * 255).astype(np.uint8)
-                resized = True
-            else:
-                img_ = img
-
-            labels = libglia.watershed(img.copy(),
-                                       cfg.watershed_level,
-                                       True)
-            print('num. of labels: {}'.format(np.unique(labels).size))
-
-            merged_labels = libglia.pre_merge(labels.copy(),
-                                              contours,
-                                              [50, 400],
-                                              0.5,
-                                              True)
-            n_merged_labels = np.unique(merged_labels).size
-            print('num. of labels after merge: {}'.format(n_merged_labels))
-
-            if(n_merged_labels < 10):
-                print('Too few merge labels, ignoring...')
-                merged_labels = labels.copy()
-
-            # This is the greedy merge (first tree in the ensemble)
-            order, saliencies = libglia.merge_order_pb(merged_labels.copy(),
-                                                       contours,
-                                                       2)
-
-            # for each clique, compute features for the boundary classifier
-            bc_feats = libglia.bc_feat(list(order),
-                                       saliencies,
-                                       merged_labels,
-                                       [img_lab, img_hsv] + daisy_descs , 
-                                       contours,
-                                       [cfg.hist_bins_color,
-                                        cfg.hist_bins_color] + 3*[cfg.hist_bins_daisy],
-                                       [0., -127., -128., 0., 0., 0., 0., 0., 0.],
-                                       [100., 128., 127., 1., 1., 1., 256., 256., 256.],
-                                       cfg.initial_saliency,
-                                       cfg.saliency_bias,
-                                       [0.2, 0.5, 0.8],
-                                       cfg.normalize_length,
-                                       cfg.use_log_shapes)
-
-            data = {'img': img,
-                    'img_hsv': img_hsv,
-                    'img_lab': img_lab,
-                    'daisy_descs': daisy_descs,
-                    'contours': contours,
-                    'order': order,
-                    'saliencies': saliencies,
-                    'labels': labels,
-                    'merged_labels': merged_labels,
-                    'bc_feats': bc_feats}
+            feats = get_features(img, cfg, hed_network)
 
             print('writing features to {}'.format(path))
 
-            np.savez(path, **data)
+            np.savez(path, **feats)
 
 if __name__ == "__main__":
 

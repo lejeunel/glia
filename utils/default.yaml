@@ -1,4 +1,5 @@
-watershed-level : 5
+slic-segments : 1000
+slic-compactness: 20
 n-ori : 8
 k-mean-num : 64
 sigma-sm : 2.0

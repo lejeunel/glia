@@ -1,0 +1,3 @@
+[submodule "utils/pytorch-hed"]
+	path = utils/pytorch-hed
+	url = git@github.com:lejeunel/pytorch-hed.git
