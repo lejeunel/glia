@@ -103,7 +103,6 @@ np::ndarray MyHmt::bc_feat_operation (bp::list const& mergeOrderList,
   }
 
   // Generate region features
-  std::cout << "generating region features" << std::endl;
   RegionMap rmap(spLabels_itk, mask, order, false);
   int rn = rmap.size();
   std::vector<std::pair<Label, std::shared_ptr<RegionFeats>>> rfeats(rn);

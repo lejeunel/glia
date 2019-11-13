@@ -41,14 +41,15 @@ def main(cfg):
     hed_network = Network()
     hed_network.load_pretrained().to(device).eval()
 
+    hmt = libglia.hmt.create()
     for i, sample in enumerate(loader):
         print('{}/{}'.format(i+1, len(loader)))
 
         img = sample['image']
 
-        feats = get_features(img, cfg, hed_network)
+        feats = get_features(img, cfg, hed_network, hmt)
         X = feats['bc_feats']
-        Y = libglia.bc_label_ri(feats['order'],
+        Y = hmt.bc_label_ri(feats['order'],
                                 feats['saliencies'],
                                 feats['labels'],
                                 sample['label/segmentation'],

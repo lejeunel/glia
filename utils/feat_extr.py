@@ -28,7 +28,7 @@ def encode(feats, n_samples, cb_size, thresh):
 
     return feats_codes
 
-def get_features(img, cfg, hed_network):
+def get_features(img, cfg, hed_network, hmt):
     device = torch.device('cuda' if cfg.cuda else 'cpu')
     img_tnsr = torch.from_numpy(np.rollaxis(img / 255, -1, 0)[None, ...]).to(device)
     print('Estimating HED contours')
@@ -70,12 +70,12 @@ def get_features(img, cfg, hed_network):
     print('num. of labels: {}'.format(np.unique(labels).size))
 
     # This is the merge based on boundary probabilities (first tree in the ensemble)
-    order, saliencies = libglia.merge_order_pb(labels.copy(),
+    order, saliencies = hmt.merge_order_pb(labels.copy(),
                                                 contours,
                                                 2)
 
     # for each clique, compute features for the boundary classifier
-    bc_feats = libglia.bc_feat(list(order),
+    bc_feats = hmt.bc_feat(list(order),
                                 saliencies,
                                 labels,
                                 [img_lab, img_hsv] + daisy_descs , 
@@ -110,6 +110,7 @@ def main(cfg):
     hed_network = Network()
     hed_network.load_pretrained().to(device).eval()
 
+    hmt = libglia.hmt.create()
     assert (cfg.mode == 'pascal' or cfg.mode == 'medical'), 'mode must be pascal or medical'
 
     if(not os.path.exists(cfg.out_path)):
@@ -128,7 +129,7 @@ def main(cfg):
         if(not os.path.exists(path)):
             img = sample['image']
 
-            feats = get_features(img, cfg, hed_network)
+            feats = get_features(img, cfg, hed_network, hmt)
 
             print('writing features to {}'.format(path))
 
