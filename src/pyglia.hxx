@@ -13,7 +13,7 @@ using namespace boost;
 
 class MyHmt {
 private:
-  std::shared_ptr<glia::alg::MyRandomForest> bc;
+  std::shared_ptr<glia::alg::EnsembleRandomForest> bc;
   int n_trees;
   int num_features;
   double sample_size_ratio;
@@ -25,19 +25,21 @@ public:
     return std::shared_ptr<MyHmt>(new MyHmt);
   }
   void config(int n_cats_ = 3, int const &n_trees_ = 100,
-         int const &num_features_ = 0, double const &sample_size_ratio_ = 0.7,
-         bool const &balance_ = true)
-      {
+              int const &num_features_ = 0,
+              double const &sample_size_ratio_ = 0.7,
+              bool const &balance_ = true) {
     std::cout << "in MyHmt constructor" << std::endl;
-    std::cout << "n_trees: " << n_trees << std::endl;
-    n_trees  = n_trees_;
+    n_trees = n_trees_;
     num_features = num_features_;
     sample_size_ratio = sample_size_ratio_;
     balance = balance_;
     n_cats = n_cats_;
 
-    bc = std::make_shared<glia::alg::MyRandomForest>(
-        n_cats, n_trees_, sample_size_ratio, num_features, balance);
+    bc = std::make_shared<glia::alg::EnsembleRandomForest>(n_cats,
+                                                           n_trees,
+                                                           sample_size_ratio,
+                                                           num_features,
+                                                           balance);
   };
 
   std::string hello() { return "Just nod if you can hear me!"; }
@@ -47,9 +49,23 @@ public:
                                   bp::list const &, double, bool);
   bp::tuple merge_order_pb_operation(np::ndarray const &, np::ndarray const &,
                                      int const &);
-  void load_models(bp::list const& models){
-    auto models_vec = list_to_std_vector<std::string>(models);
-    bc->from_serialized(models_vec);
+
+  // models is a list of lists
+  void load_models(bp::list const &models) {
+
+    // re-create models
+    bc->models.clear();
+    for (int i = 0; i < bp::len(models); ++i)
+      bc->models.push_back(std::make_shared<glia::alg::MyRandomForest>(
+          n_cats, n_trees, sample_size_ratio, num_features, balance));
+
+    // load models
+    for (int i = 0; i < bp::len(models); ++i) {
+
+      bp::list model = bp::extract<bp::list>(models[i]);
+      auto models_vec = list_to_std_vector<std::string>(models[i]);
+      bc->models[i]->from_serialized(models_vec);
+    }
   };
 
   np::ndarray bc_label_ri_operation(bp::list const &, np::ndarray const &,

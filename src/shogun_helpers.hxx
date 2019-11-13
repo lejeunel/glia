@@ -43,7 +43,7 @@ public:
 
     // Compute median of features on given idx
     auto mat = feats_->get_feature_matrix();
-    mat.display_matrix();
+    // mat.display_matrix();
     auto first = mat.get_row_vector(idx_first);
     auto second = mat.get_row_vector(idx_second);
     auto first_vec =
@@ -56,7 +56,7 @@ public:
 
     threshold = median<double>(&first_vec.front(),
                                &first_vec.front() + first_vec.size());
-    std::cout << "median: " << threshold << std::endl;
+    // std::cout << "median: " << threshold << std::endl;
 
     // store indices for each category
     indices = std::vector<std::vector<int>>(3);
@@ -73,32 +73,35 @@ public:
       }
     }
 
-    for(int i= 0; i < indices.size(); ++i){
-      std::cout << "got " << indices[i].size() << " samples in cat. " << i << std::endl;
-      auto mat_this_cat = SGMatrix<double>(feats_->get_num_features(), indices[i].size());
-      for(int j= 0; j < indices[i].size(); ++j){
+    for (int i = 0; i < indices.size(); ++i) {
+      // std::cout << "got " << indices[i].size() << " samples in cat. " << i
+      //           << std::endl;
+      auto mat_this_cat =
+          SGMatrix<double>(feats_->get_num_features(), indices[i].size());
+      for (int j = 0; j < indices[i].size(); ++j) {
         SGVector<double> vec = mat.get_column(indices[i][j]);
-        vec.display_vector();
+        // vec.display_vector();
         mat_this_cat.set_column(j, vec);
       }
-      mat_this_cat.display_matrix();
+      // mat_this_cat.display_matrix();
 
-      auto feats_this_cat = std::make_shared<DenseFeatures<double>>(mat_this_cat);
+      auto feats_this_cat =
+          std::make_shared<DenseFeatures<double>>(mat_this_cat);
       feats_by_cat.push_back(feats_this_cat);
     }
 
     feats = feats_;
   }
 
-  FeaturesPtr get(int const &cat) {
-    return feats_by_cat[cat];
-  }
+  FeaturesPtr get(int const &cat) { return feats_by_cat[cat]; }
 
+  // this doesn't work: https://github.com/shogun-toolbox/shogun/issues/4795
   SubFeaturesPtr get_subsamples(int const &cat) {
     auto vec = SGVector<int>(indices[cat].begin(), indices[cat].end());
     return std::make_shared<SubFeatures>(feats, vec);
   }
 
+  // Generate MulticlassLabels according to category
   MulticlassLabelsPtr filter_labels(MulticlassLabelsPtr labels,
                                     int const &cat) const {
 
@@ -108,12 +111,12 @@ public:
     return labels;
   }
 
+  // For each category, display feature matrix
   void display_feats() {
     for (int i = 0; i < indices.size(); ++i) {
-      std::cout << "category: " << i << ", n_feats:" << indices[i].size()
-                << std::endl;
-      if (indices[i].size() > 0)
-        get(i)->get_computed_dot_feature_matrix().display_matrix();
+      // std::cout << "category: " << i << ", n_samples:" << indices[i].size()
+      //           << std::endl;
+      get(i)->get_feature_matrix().display_matrix();
     }
   }
 };
@@ -155,12 +158,12 @@ MulticlassLabelsPtr np_to_shogun_labels(np::ndarray const &X) {
 template <typename Tx> FeaturesPtr np_to_shogun_feats(np::ndarray const &X) {
   Tx *data = reinterpret_cast<Tx *>(X.get_data());
   auto mat = SGMatrix<Tx>(X.shape(1), X.shape(0));
-  std::cout << X.shape(0) << std::endl;
-  std::cout << X.shape(1) << std::endl;
+  // std::cout << X.shape(0) << std::endl;
+  // std::cout << X.shape(1) << std::endl;
   for (int i = 0; i < X.shape(0); ++i) {
-        auto vec = SGVector<Tx>(X.shape(1));
-        for (int j = 0; j<X.shape(1); ++j){
-          vec.set_element(data[i * X.shape(1) + j], j);
+    auto vec = SGVector<Tx>(X.shape(1));
+    for (int j = 0; j < X.shape(1); ++j) {
+      vec.set_element(data[i * X.shape(1) + j], j);
     }
     // vec.display_vector();
     mat.set_column(i, vec);
@@ -170,9 +173,8 @@ template <typename Tx> FeaturesPtr np_to_shogun_feats(np::ndarray const &X) {
   return out;
 }
 
-inline SGVector<double>
-make_balanced_weight_vector(MulticlassLabelsPtr Y,
-                            SGVector<double> &weights) {
+inline SGVector<double> make_balanced_weight_vector(MulticlassLabelsPtr Y,
+                                                    SGVector<double> &weights) {
 
   auto Yvec = Y->get_labels();
   // Yvec.display_vector();
@@ -198,23 +200,32 @@ make_balanced_weight_vector(MulticlassLabelsPtr Y,
   return weights;
 }
 
-//from https://gist.github.com/marcinwol/b8df949bf8009cf856a3
+// from https://gist.github.com/marcinwol/b8df949bf8009cf856a3
+
 template <class T>
-inline
-boost::python::list std_vector_to_list(std::vector<T> vector) {
-    typename std::vector<T>::iterator iter;
-    boost::python::list list;
-    for (iter = vector.begin(); iter != vector.end(); ++iter) {
-        list.append(*iter);
-    }
-    return list;
+inline boost::python::list std_vector_to_list(std::vector<T> vector) {
+  typename std::vector<T>::iterator iter;
+  boost::python::list list;
+  for (iter = vector.begin(); iter != vector.end(); ++iter) {
+    list.append(*iter);
+  }
+  return list;
 }
-template<typename T>
-inline
-std::vector< T > list_to_std_vector( const bp::object& iterable )
-{
-    return std::vector< T >( boost::python::stl_input_iterator< T >( iterable ),
-                             boost::python::stl_input_iterator< T >( ) );
+
+template <class T>
+inline boost::python::list std_2d_vector_to_list(std::vector<std::vector<T>> vector) {
+  boost::python::list list;
+  for(int i=0; i<vector.size(); ++i){
+    auto l = std_vector_to_list(vector[i]);
+    list.append(l);
+  }
+  return list;
+}
+
+template <typename T>
+inline std::vector<T> list_to_std_vector(const bp::object &iterable) {
+  return std::vector<T>(boost::python::stl_input_iterator<T>(iterable),
+                        boost::python::stl_input_iterator<T>());
 }
 
 #endif

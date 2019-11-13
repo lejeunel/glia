@@ -8,7 +8,7 @@ import sys
 
 if __name__ == "__main__":
 
-    n, D = 20, 4
+    n, D = 2000, 4
     X = np.random.randn(n, D)
     Xarea0 = np.abs(np.random.uniform(0.01, 0.05, size=n))
     Xarea1 = np.abs(np.random.normal(0.01, 0.05, size=n))
@@ -19,7 +19,7 @@ if __name__ == "__main__":
     median = np.median(np.concatenate((Xarea0, Xarea1)))
     print('median numpy: {}'.format(median))
 
-    print(X)
+    # print(X)
 
     # print('testing feature conversion')
     # print(X)
@@ -31,9 +31,10 @@ if __name__ == "__main__":
 
     print('testing rf')
     hmt = libglia.hmt.create()
-    hmt.config(3, 100, 0, 0.7, True)
+    hmt.config(3, 255, 0, 0.7, True)
     models = hmt.train_rf(X, Y)
-    # print(models)
+    models = hmt.train_rf(X, Y)
 
-    hmt.load_models(models)
+    # print(models)
+    # hmt.load_models(models)
 
