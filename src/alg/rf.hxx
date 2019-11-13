@@ -76,7 +76,6 @@ public:
       auto stream = std::make_shared<io::ByteArrayInputStream>(params[i]);
       deserializer->attach(stream);
       auto obj = deserializer->read_object()->as<RandomForest>();
-      std::cout << obj->get_name() << "\n";
       rand_forest.push_back(obj);
 
     }
@@ -109,6 +108,8 @@ public:
 
       auto f_type = SGVector<bool>(X->n_dims);
       f_type.display_vector();
+      X->filter_labels(Y, i)->get_labels().display_vector();
+      std::cout << "n vectors: " << X->get(i)->get_num_vectors();
       rand_forest[i]->set_feature_types(f_type);
       rand_forest[i]->train(X->get(i));
     }

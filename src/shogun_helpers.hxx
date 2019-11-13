@@ -34,6 +34,7 @@ public:
   double threshold;
   int n_dims = 0;
   FeaturesPtr feats;
+  std::vector<FeaturesPtr> feats_by_cat;
 
 public:
   CategorizedFeatures() {}
@@ -52,7 +53,6 @@ public:
     first_vec.insert(first_vec.end(), second_vec.begin(), second_vec.end());
 
     n_dims = mat.get_column(0).size();
-    std::cout << "n_dims: " << n_dims << std::endl;
 
     threshold = median<double>(&first_vec.front(),
                                &first_vec.front() + first_vec.size());
@@ -65,22 +65,36 @@ public:
       if (std::max(this_feat.get_element(idx_first),
                    this_feat.get_element(idx_second)) > threshold) {
         indices[0].push_back(i);
-        // std::cout << "pushed vec " << i << " to cat. 0" << std::endl;
       } else if (std::min(this_feat.get_element(idx_first),
                           this_feat.get_element(idx_second)) < threshold) {
         indices[1].push_back(i);
-        // std::cout << "pushed vec " << i << " to cat. 1" << std::endl;
       } else {
         indices[2].push_back(i);
-        // std::cout << "pushed vec " << i << " to cat. 2" << std::endl;
       }
     }
-    std::cout << "store ok" << std::endl;
+
+    for(int i= 0; i < indices.size(); ++i){
+      std::cout << "got " << indices[i].size() << " samples in cat. " << i << std::endl;
+      auto mat_this_cat = SGMatrix<double>(feats_->get_num_features(), indices[i].size());
+      for(int j= 0; j < indices[i].size(); ++j){
+        SGVector<double> vec = mat.get_column(indices[i][j]);
+        vec.display_vector();
+        mat_this_cat.set_column(j, vec);
+      }
+      mat_this_cat.display_matrix();
+
+      auto feats_this_cat = std::make_shared<DenseFeatures<double>>(mat_this_cat);
+      feats_by_cat.push_back(feats_this_cat);
+    }
 
     feats = feats_;
   }
 
-  SubFeaturesPtr get(int const &cat) {
+  FeaturesPtr get(int const &cat) {
+    return feats_by_cat[cat];
+  }
+
+  SubFeaturesPtr get_subsamples(int const &cat) {
     auto vec = SGVector<int>(indices[cat].begin(), indices[cat].end());
     return std::make_shared<SubFeatures>(feats, vec);
   }
@@ -139,10 +153,20 @@ MulticlassLabelsPtr np_to_shogun_labels(np::ndarray const &X) {
 }
 
 template <typename Tx> FeaturesPtr np_to_shogun_feats(np::ndarray const &X) {
-  // auto X_copy = X.copy();
-  // Tx *data = reinterpret_cast<Tx *>(X_copy.get_data());
   Tx *data = reinterpret_cast<Tx *>(X.get_data());
-  auto out = std::make_shared<DenseFeatures<double>>(data, X.shape(1), X.shape(0));
+  auto mat = SGMatrix<Tx>(X.shape(1), X.shape(0));
+  std::cout << X.shape(0) << std::endl;
+  std::cout << X.shape(1) << std::endl;
+  for (int i = 0; i < X.shape(0); ++i) {
+        auto vec = SGVector<Tx>(X.shape(1));
+        for (int j = 0; j<X.shape(1); ++j){
+          vec.set_element(data[i * X.shape(1) + j], j);
+    }
+    // vec.display_vector();
+    mat.set_column(i, vec);
+  }
+  // mat.display_matrix();
+  auto out = std::make_shared<DenseFeatures<double>>(mat);
   return out;
 }
 
@@ -172,6 +196,25 @@ make_balanced_weight_vector(MulticlassLabelsPtr Y,
   }
 
   return weights;
+}
+
+//from https://gist.github.com/marcinwol/b8df949bf8009cf856a3
+template <class T>
+inline
+boost::python::list std_vector_to_list(std::vector<T> vector) {
+    typename std::vector<T>::iterator iter;
+    boost::python::list list;
+    for (iter = vector.begin(); iter != vector.end(); ++iter) {
+        list.append(*iter);
+    }
+    return list;
+}
+template<typename T>
+inline
+std::vector< T > list_to_std_vector( const bp::object& iterable )
+{
+    return std::vector< T >( boost::python::stl_input_iterator< T >( iterable ),
+                             boost::python::stl_input_iterator< T >( ) );
 }
 
 #endif

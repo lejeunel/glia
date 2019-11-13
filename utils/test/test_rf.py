@@ -8,7 +8,7 @@ import sys
 
 if __name__ == "__main__":
 
-    n, D = 10, 4
+    n, D = 20, 4
     X = np.random.randn(n, D)
     Xarea0 = np.abs(np.random.uniform(0.01, 0.05, size=n))
     Xarea1 = np.abs(np.random.normal(0.01, 0.05, size=n))
@@ -30,6 +30,10 @@ if __name__ == "__main__":
     # libglia.test_conversion_shogun_labels(Y)
 
     print('testing rf')
-    hmt = libglia.hmt(3, 100, 0, 0.7, True)
-    hmt.train_rf(X, Y)
+    hmt = libglia.hmt.create()
+    hmt.config(3, 100, 0, 0.7, True)
+    models = hmt.train_rf(X, Y)
+    # print(models)
+
+    hmt.load_models(models)
 

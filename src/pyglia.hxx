@@ -1,11 +1,11 @@
 #ifndef _pyglia_hxx_
 #define _pyglia_hxx_
 
-#include "shogun_helpers.hxx"
+#include "alg/rf.hxx"
 #include "np_helpers.hxx"
+#include "shogun_helpers.hxx"
 #include <boost/python.hpp>
 #include <boost/python/numpy.hpp>
-#include "alg/rf.hxx"
 
 namespace bp = boost::python;
 namespace np = boost::python::numpy;
@@ -20,21 +20,24 @@ private:
   bool balance;
   int n_cats;
 
-
 public:
-  MyHmt(int n_cats_=3,
-        int const & n_trees_=100,
-        int const& num_features_=0,
-        double const& sample_size_ratio_=0.7,
-        bool const & balance_=true):
-    n_trees(n_trees_), num_features(num_features_), sample_size_ratio(sample_size_ratio_),
-    balance(balance_), n_cats(n_cats_){
+  static std::shared_ptr<MyHmt> create() {
+    return std::shared_ptr<MyHmt>(new MyHmt);
+  }
+  void config(int n_cats_ = 3, int const &n_trees_ = 100,
+         int const &num_features_ = 0, double const &sample_size_ratio_ = 0.7,
+         bool const &balance_ = true)
+      {
     std::cout << "in MyHmt constructor" << std::endl;
     std::cout << "n_trees: " << n_trees << std::endl;
-    bc = std::make_shared<glia::alg::MyRandomForest>(n_cats, n_trees_,
-                                                     sample_size_ratio, num_features,
-                                                     balance);
+    n_trees  = n_trees_;
+    num_features = num_features_;
+    sample_size_ratio = sample_size_ratio_;
+    balance = balance_;
+    n_cats = n_cats_;
 
+    bc = std::make_shared<glia::alg::MyRandomForest>(
+        n_cats, n_trees_, sample_size_ratio, num_features, balance);
   };
 
   std::string hello() { return "Just nod if you can hear me!"; }
@@ -44,6 +47,10 @@ public:
                                   bp::list const &, double, bool);
   bp::tuple merge_order_pb_operation(np::ndarray const &, np::ndarray const &,
                                      int const &);
+  void load_models(bp::list const& models){
+    auto models_vec = list_to_std_vector<std::string>(models);
+    bc->from_serialized(models_vec);
+  };
 
   np::ndarray bc_label_ri_operation(bp::list const &, np::ndarray const &,
                                     np::ndarray const &, np::ndarray const &,
@@ -57,17 +64,14 @@ public:
                                 bp::list const &, double const &,
                                 double const &, bp::list const &, bool const &,
                                 bool const &);
-  bp::tuple merge_order_bc_operation(
-      np::ndarray const &, // SP labels
-      bp::list const &,      // LAB, HSV, SIFT codes, etc..
-      np::ndarray const &,
-      np::ndarray const &, // gPb, UCM, etc..
-      bp::list const &,
-      bp::list const &,
-      bp::list const &,
-      bool const &,
-      bool const &);
+  bp::tuple
+  merge_order_bc_operation(np::ndarray const &, // SP labels
+                           bp::list const &,    // LAB, HSV, SIFT codes, etc..
+                           np::ndarray const &,
+                           np::ndarray const &, // gPb, UCM, etc..
+                           bp::list const &, bp::list const &, bp::list const &,
+                           bool const &, bool const &);
 
-    bool train_rf_operation(np::ndarray const &, np::ndarray const &);
-  };
+  bp::list train_rf_operation(np::ndarray const &, np::ndarray const &);
+};
 #endif

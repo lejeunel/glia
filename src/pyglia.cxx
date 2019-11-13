@@ -19,7 +19,12 @@ BOOST_PYTHON_MODULE(libglia) {
   // shogun::init_shogun_with_defaults();
   // shogun::init_shogun();
 
-  bp::class_<MyHmt, std::shared_ptr<MyHmt>>("hmt", bp::init<int, int, int, double, bool>())
+  bp::class_<MyHmt, std::shared_ptr<MyHmt>>("hmt", bp::init<>())
+    .def("create", &MyHmt::create )
+    .def("load_models", &MyHmt::load_models,
+         bp::args("models_list"), "")
+    .def("config", &MyHmt::config,
+         bp::args("n_cats", "n_trees", "num_features", "sample_size_ratio", "balance"), "")
       .def("watershed", &MyHmt::watershed_operation,
            bp::args("image", "level", "relabel"),
            "Generate watershed segmentation")
