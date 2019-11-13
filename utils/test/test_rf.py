@@ -32,8 +32,8 @@ if __name__ == "__main__":
     print('testing rf')
     hmt = libglia.hmt.create()
     hmt.config(3, 255, 0, 0.7, True)
-    models = hmt.train_rf(X, Y)
-    models = hmt.train_rf(X, Y)
+    hmt.train_rf(X, Y)
+    models = hmt.get_models()
 
     # print(models)
     # hmt.load_models(models)

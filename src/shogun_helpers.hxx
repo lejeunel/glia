@@ -28,16 +28,31 @@ typedef std::shared_ptr<MulticlassLabels> MulticlassLabelsPtr;
 template <typename T> T median(T *begin, T *end);
 
 class CategorizedFeatures {
+private:
+  double threshold;
 public:
   std::vector<std::vector<int>> indices;
   int n_cats = 3;
-  double threshold;
   int n_dims = 0;
   FeaturesPtr feats;
   std::vector<FeaturesPtr> feats_by_cat;
 
-public:
   CategorizedFeatures() {}
+  template<typename T>
+  int get_cat(SGVector<T> & f,
+                     int const& idx_first,
+                     int const& idx_second) const{
+
+      if (std::max(f.get_element(idx_first),
+                   f.get_element(idx_second)) > threshold) {
+        return 0;
+      } else if (std::min(f.get_element(idx_first),
+                          f.get_element(idx_second)) < threshold) {
+        return 1;
+      } else {
+        return 2;
+      }
+  }
   CategorizedFeatures(FeaturesPtr feats_, int const &idx_first,
                       int const &idx_second) {
 
@@ -62,15 +77,8 @@ public:
     indices = std::vector<std::vector<int>>(3);
     for (int i = 0; i < feats_->get_num_vectors(); ++i) {
       auto this_feat = feats_->get_feature_vector(i);
-      if (std::max(this_feat.get_element(idx_first),
-                   this_feat.get_element(idx_second)) > threshold) {
-        indices[0].push_back(i);
-      } else if (std::min(this_feat.get_element(idx_first),
-                          this_feat.get_element(idx_second)) < threshold) {
-        indices[1].push_back(i);
-      } else {
-        indices[2].push_back(i);
-      }
+      auto this_cat = get_cat(this_feat, idx_first, idx_second);
+      indices[this_cat].push_back(i);
     }
 
     for (int i = 0; i < indices.size(); ++i) {

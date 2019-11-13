@@ -38,7 +38,7 @@ BOOST_PYTHON_MODULE(libglia) {
            "Perform greedy merge according to boundary probability")
 
       .def("merge_order_bc", &MyHmt::merge_order_bc_operation,
-           bp::args("label", "images", "truth", "pbArray",
+           bp::args("X_prev", "label", "images", "truth", "pbArray",
                     "histogramBins", "histogramLowerValues",
                     "histogramHigherValues", "useLogOfShapes", "useSimpleFeatures"),
            "Perform greedy merge according to boundary probability")
@@ -54,6 +54,9 @@ BOOST_PYTHON_MODULE(libglia) {
       .def("train_rf", &MyHmt::train_rf_operation,
            bp::args("X", "Y"),
            "Train RF classifier")
+
+      .def("get_models", &MyHmt::get_models,
+           "Return models in JSON format")
 
       .def("bc_label_ri", &MyHmt::bc_label_ri_operation,
            bp::args("mergeOrderList", "labels", "groundtruth", "mask",

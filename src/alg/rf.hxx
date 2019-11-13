@@ -109,25 +109,16 @@ public:
     }
   }
 
-  // Predict operator
-  std::vector<MulticlassLabelsPtr> operator()(CategorizedFeaturesPtr feats_) {
+  // Predict operators
+  int predict(FeaturesPtr v, int const& cat) {
+    return 0;
+  };
+
+  std::vector<MulticlassLabelsPtr> predict(CategorizedFeaturesPtr feats_) {
 
     std::vector<MulticlassLabelsPtr> predictions;
     for (int i = 0; i < feats_->n_cats; ++i) {
       // initialize
-
-      rand_forest[i]->set_bag_size(sample_size_ratio *
-                                   feats_->get(i)->get_num_vectors());
-
-      auto m_vote = std::shared_ptr<MajorityVote>();
-      rand_forest[i]->set_combination_rule(m_vote);
-
-      // all features are continuous (non-categorical)
-      SGVector<bool> f_type(feats_->get(i)->get_dim_feature_space());
-      SGVector<bool>::fill_vector(
-          f_type, feats_->get(i)->get_dim_feature_space(), false);
-
-      rand_forest[i]->set_machine_problem_type(EProblemType::PT_BINARY);
 
       auto pred_labels = rand_forest[i]->apply_multiclass(feats_->get(i));
       predictions.push_back(MulticlassLabelsPtr(pred_labels));
@@ -188,6 +179,12 @@ public:
     }
     return params;
   }
+
+  int predict(FeaturesPtr v, int const& cat) {
+    //use last model by default
+    auto m = models[models.size() -1];
+    return m->predict(v, cat);
+  };
 
   // first dim: stage, second dim: category
   virtual void

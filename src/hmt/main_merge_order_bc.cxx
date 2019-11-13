@@ -2,16 +2,17 @@
 #include "alg/rf.hxx"
 #include "hmt/bc_feat.hxx"
 #include "hmt/bc_label.hxx"
+#include "np_helpers.hxx"
 #include "pyglia.hxx"
 #include "util/struct_merge_bc.hxx"
 #include "util/text_cmd.hxx"
 #include "util/text_io.hxx"
-#include "np_helpers.hxx"
 
 using namespace glia;
 using namespace glia::hmt;
 
 bp::tuple MyHmt::merge_order_bc_operation(
+    np::ndarray const &X_prev,   // boundary features of previous run
     np::ndarray const &spLabels, // SP labels
     bp::list const &images,      // LAB, HSV, SIFT codes, etc..
     np::ndarray const &truth,
@@ -19,6 +20,10 @@ bp::tuple MyHmt::merge_order_bc_operation(
     bp::list const &histogramBins, bp::list const &histogramLowerValues,
     bp::list const &histogramHigherValues, bool const &useLogOfShape,
     bool const &useSimpleFeatures) {
+
+  // this is to calculate threshold from previous boundary feature set
+  auto X_prev_ = np_to_shogun_feats<double>(X_prev);
+  auto X_cat = std::make_shared<CategorizedFeatures>(X_prev_, 0, 1);
 
   std::vector<double> boundaryThresholds;
 
@@ -95,44 +100,30 @@ bp::tuple MyHmt::merge_order_bc_operation(
     }
     bcfmap[std::make_pair(std::min(r0, r1), std::max(r0, r1))] = data;
   };
-  std::shared_ptr<opt::TFunction<std::vector<FVal>>> bc;
-  std::vector<std::vector<FVal>> bcfMinMax;
 
-  // Create and initialize ensemble random forest
-  // if (bcModelFiles.size() == 1) {
-  //   bc = std::make_shared<alg::RandomForest>(BC_LABEL_MERGE,
-  //                                            bcModelFiles.front());
-  // } else {
-  //   if (bcModelDistributorArgs.size() != 3) {
-  //     perr("Error: model distributor needs 3 arguments...");
-  //   }
-  //   bc = std::make_shared<alg::EnsembleRandomForest>(
-  //       BC_LABEL_MERGE, bcModelFiles,
-  //       opt::ThresholdModelDistributor<FVal>(bcModelDistributorArgs[0],
-  //                                            bcModelDistributorArgs[1],
-  //                                            bcModelDistributorArgs[2]));
-  // }
-
-  // Boundary predictor
-  // std::vector<FVal> tmpData;
-  // auto fBcPred = [&bc, &bcfMinMax, &tmpData](std::vector<FVal> const &data) {
-  //   return bc->operator()(data);
-  // };
+  // Boundary predictor (lambda function passed to merging algorithm)
+  auto fBcPred = [this, X_cat](std::vector<double> const& data) {
+                   auto data_ = SGVector<double>(data.begin(), data.end());
+                   auto cat = X_cat->get_cat<double>(data_, 0, 1);
+                   auto data_mat = SGMatrix<double>(data_);
+                   auto data__ = std::make_shared<DenseFeatures<double>>(data_mat);
+                   return this->bc->predict(data__, cat);
+  };
 
   // Generate merging orders
   std::vector<TTriple<Label>> order;
   std::vector<double> saliencies;
-  // genMergeOrderGreedyUsingBoundaryClassifier<std::vector<FVal>>(
-  //     order, saliencies, truth_itk, mask, fBcFeat, fBcPred,
-  //     f_true<TBoundaryTable<std::vector<FVal>, RegionMap> &,
-  //            TBoundaryTable<std::vector<FVal>, RegionMap>::iterator>);
+  genMergeOrderGreedyUsingBoundaryClassifier<std::vector<FVal>>(
+      order, saliencies, truth_itk, mask, fBcFeat, fBcPred,
+      f_true<TBoundaryTable<std::vector<FVal>, RegionMap> &,
+             TBoundaryTable<std::vector<FVal>, RegionMap>::iterator>);
 
-  // store boundary classifier feats
+  // store new boundary classifier feats
   std::vector<std::vector<FVal>> bcfeats;
-  // bcfeats.reserve(order.size());
-  // for (auto const &m : order) {
-  //   bcfeats.push_back(bcfmap.find(std::make_pair(m.x0, m.x1))->second);
-  // }
+  bcfeats.reserve(order.size());
+  for (auto const &m : order) {
+    bcfeats.push_back(bcfmap.find(std::make_pair(m.x0, m.x1))->second);
+  }
 
   return bp::make_tuple(nph::vector_triple_to_np<Label>(order),
                         nph::vector_to_np<double>(saliencies),

@@ -22,7 +22,7 @@ num of features to examine at each node. 0 for sqrt(D) balance: Whether to
 balance samples
 ---------------------------------------------------------*/
 
-bp::list MyHmt::train_rf_operation(np::ndarray const &X_, np::ndarray const &Y_) {
+void MyHmt::train_rf_operation(np::ndarray const &X_, np::ndarray const &Y_) {
 
   // sg::init_shogun_with_defaults();
   if (X_.shape(0) != Y_.shape(0) || Y_.get_nd() != 1) {
@@ -37,13 +37,6 @@ bp::list MyHmt::train_rf_operation(np::ndarray const &X_, np::ndarray const &Y_)
 
   bc->train(X_cat, Y);
 
-  auto serial_str = bc->to_serialized();
-  // std::cout << "ok train" << std::endl;
-  // for(int i=0; i<serial_str.size(); ++i){
-  //   std::cout << "cat. " << i << std::endl;
-  //   std::cout << serial_str[i] << std::endl;
-  // }
-
-
-  return std_2d_vector_to_list(serial_str);
+  // auto serial_str = bc->to_serialized();
+  // return std_2d_vector_to_list(serial_str);
 }

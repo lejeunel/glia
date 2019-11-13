@@ -35,11 +35,8 @@ public:
     balance = balance_;
     n_cats = n_cats_;
 
-    bc = std::make_shared<glia::alg::EnsembleRandomForest>(n_cats,
-                                                           n_trees,
-                                                           sample_size_ratio,
-                                                           num_features,
-                                                           balance);
+    bc = std::make_shared<glia::alg::EnsembleRandomForest>(
+        n_cats, n_trees, sample_size_ratio, num_features, balance);
   };
 
   std::string hello() { return "Just nod if you can hear me!"; }
@@ -68,6 +65,11 @@ public:
     }
   };
 
+  bp::list get_models() {
+    auto serial_vec = bc->to_serialized();
+    return std_2d_vector_to_list(serial_vec);
+  };
+
   np::ndarray bc_label_ri_operation(bp::list const &, np::ndarray const &,
                                     np::ndarray const &, np::ndarray const &,
                                     bool const &, int const &, bool const &,
@@ -80,14 +82,15 @@ public:
                                 bp::list const &, double const &,
                                 double const &, bp::list const &, bool const &,
                                 bool const &);
-  bp::tuple
-  merge_order_bc_operation(np::ndarray const &, // SP labels
-                           bp::list const &,    // LAB, HSV, SIFT codes, etc..
-                           np::ndarray const &,
-                           np::ndarray const &, // gPb, UCM, etc..
-                           bp::list const &, bp::list const &, bp::list const &,
-                           bool const &, bool const &);
+  bp::tuple merge_order_bc_operation(
+      np::ndarray const &, // boundary features of previous run
+      np::ndarray const &, // SP labels
+      bp::list const &,    // LAB, HSV, SIFT codes, etc..
+      np::ndarray const &,
+      np::ndarray const &, // gPb, UCM, etc..
+      bp::list const &, bp::list const &, bp::list const &, bool const &,
+      bool const &);
 
-  bp::list train_rf_operation(np::ndarray const &, np::ndarray const &);
+  void train_rf_operation(np::ndarray const &, np::ndarray const &);
 };
 #endif
