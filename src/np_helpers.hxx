@@ -82,11 +82,12 @@ np_to_itk_label(const np::ndarray &inputArray) {
 
   Label *data = reinterpret_cast<Label *>(X.get_data());
   int i = 0;
-  for (int x = 0; x < size[0]; ++x) {
-    for (int y = 0; y < size[1]; ++y) {
+  for (int y = 0; y < size[1]; ++y) {
+    for (int x = 0; x < size[0]; ++x) {
     const LabelImageType::IndexType pixelIndex = {{x, y}};
     auto val = data[i];
     image->SetPixel(pixelIndex, val);
+    // std::cout << "(" << x << "," << y << "): " << val << std::endl;
     i++;
     }
   }
@@ -122,8 +123,8 @@ inline RealImage<2>::Pointer np_to_itk_real(const np::ndarray &inputArray) {
 
   Real *data = reinterpret_cast<Real *>(X.get_data());
   int i = 0;
-  for (int x = 0; x < size[0]; ++x) {
-    for (int y = 0; y < size[1]; ++y) {
+  for (int y = 0; y < size[1]; ++y) {
+    for (int x = 0; x < size[0]; ++x) {
     const RealImageType::IndexType pixelIndex = {{x, y}};
     auto val = data[i];
     image->SetPixel(pixelIndex, val);
@@ -203,7 +204,7 @@ inline bool is_empty(np::ndarray const &arr) {
 }
 
 template <typename T>
-bp::tuple vector_triple_to_np(std::vector<glia::TTriple<T>> const &vec) {
+bp::list vector_triple_to_np(std::vector<glia::TTriple<T>> const &vec) {
 
   // get all components of triple
   std::vector<T> tx0;
@@ -229,7 +230,12 @@ bp::tuple vector_triple_to_np(std::vector<glia::TTriple<T>> const &vec) {
   np::ndarray out1 = vector_to_np<T>(tx1);
   np::ndarray out2 = vector_to_np<T>(tx2);
 
-  return bp::make_tuple(out0, out1, out2);
+  bp::list out;
+  out.append(out0);
+  out.append(out1);
+  out.append(out2);
+
+  return out;
 }
 
 template <typename T>

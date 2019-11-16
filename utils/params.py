@@ -35,11 +35,14 @@ def get_params(path='.'):
     p.add('--hist-bins-texture', type=int)
     p.add('--initial-saliency', type=float)
     p.add('--saliency-bias', type=float)
-    p.add('--normalize-length', type=bool)
-    p.add('--use-log-shapes', type=bool)
-
-    p.add('--gpb-max-shape', type=int)
+    p.add('--normalize-area', type=bool, default=True)
+    p.add('--use-log-shape', type=bool, default=False)
 
     p.add('--cuda', default=False, action='store_true')
+
+    p.add('--n-trees', type=int)
+    p.add('--sample-size-ratio', type=float)
+    p.add('--balance', type=bool, default=True)
+    p.add('--n-classifiers', type=int)
 
     return p

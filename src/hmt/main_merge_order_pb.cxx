@@ -27,7 +27,7 @@ merge_order_pb_operation(LabelImageType::Pointer segImage,
   std::vector<double> saliencies;
 
   LabelImageType::Pointer mask = LabelImageType::Pointer(nullptr);
-  RegionMap rmap(segImage, mask, false);
+  RegionMap rmap(segImage, mask, true);
 
   if (bd_intens_stats_type == 1) {
     genMergeOrderGreedyUsingPbApproxMedian(
@@ -52,6 +52,13 @@ bp::tuple MyHmt::merge_order_pb_wrp(np::ndarray const &labelArray,
                                     int const &bd_intens_stats_type) {
 
   LabelImageType::Pointer segImage = nph::np_to_itk_label(labelArray);
+  // using WriterType = itk::ImageFileWriter<LabelImageType>;
+  // WriterType::Pointer writer = WriterType::New();
+  // writer->SetFileName("label.jpg");
+  // writer->SetInput(segImage);
+  // writer->Update();
+
+
   RealImageType::Pointer pbImage = nph::np_to_itk_real(pbArray);
 
   auto out_tuple =
@@ -60,4 +67,3 @@ bp::tuple MyHmt::merge_order_pb_wrp(np::ndarray const &labelArray,
   return bp::make_tuple(nph::vector_triple_to_np<Label>(std::get<0>(out_tuple)),
                         nph::vector_to_np<double>(std::get<1>(out_tuple)));
 }
-

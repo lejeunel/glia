@@ -19,8 +19,8 @@ typedef TRegionMap<Label, Point<DIMENSION>> RegionMap;
 double initSal = 1.0;
 double salBias = 1.0;
 std::vector<double> boundaryThresholds;
-bool normalizeShape = false;
-bool useLogShape = false;
+// bool normalizeShape = false;
+// bool useLogShape = false;
 namespace np = boost::python::numpy;
 namespace bp = boost::python;
 
@@ -39,8 +39,8 @@ computation histogramLowerValues: For each element in images, lower value of
 histogram histogramHigherValues: For each element in images, lower value of
 histogram initialSaliency: default: 1.0 saliencyBias: default: 1.0
 boundaryShapeThresholds: ?
-normalizeSizeLength: see paper, default to true
-useLogOfShapes: see paper, default to true
+normalizeShape: see paper, default to true
+useLogShape: see paper, default to true
 ---------------------------------------------------------*/
 
 std::vector<std::vector<FVal>> bc_feat_operation(
@@ -144,7 +144,7 @@ np::ndarray MyHmt::bc_feat_wrp(
     bp::list const &histogramBins, bp::list const &histogramLowerValues,
     bp::list const &histogramHigherValues, double const &initialSaliency,
     double const &saliencyBias, bp::list const &boundaryShapeThresholds,
-    bool const &normalizeSizeLength, bool const &useLogOfShapes) {
+    bool const &normalizeShape, bool const &useLogShape) {
 
   LabelImageType::Pointer segImage = nph::np_to_itk_label(labelArray);
   RealImageType::Pointer pbImage = nph::np_to_itk_real(pbArray);

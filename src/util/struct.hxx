@@ -136,7 +136,7 @@ genContourMap (TPMap& borderMap, TBMap& boundaryMap,
     auto thisVal = image->GetPixel(point);
     auto ct = getContourTraits(point, image, mask);
     if (ct.first != thisVal) { // boundary point
-      // std::cout << point << std::endl;
+      // std::cout << "point: " << point << " bounds " << thisVal << "," << ct.first << std::endl;
       boundaryMap[std::make_pair(thisVal, ct.first)].push_back(point);
     }
     else if (ct.second) // border point

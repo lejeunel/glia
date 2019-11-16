@@ -29,8 +29,7 @@ normalizeSizeLength: see paper, default to true
 useLogOfShapes: see paper, default to true
 ---------------------------------------------------------*/
 
-std::tuple<std::vector<TTriple<Label>>, std::vector<double>,
-           std::vector<std::vector<FVal>>>
+std::tuple<std::vector<TTriple<Label>>, std::vector<double>>
 merge_order_bc_operation(
     FeaturesPtr X,                    // boundary features of previous run
     LabelImageType::Pointer spLabels, // SP labels
@@ -121,13 +120,13 @@ merge_order_bc_operation(
              TBoundaryTable<std::vector<FVal>, RegionMap>::iterator>);
 
   // store new boundary classifier feats
-  std::vector<std::vector<FVal>> bcfeats;
-  bcfeats.reserve(order.size());
-  for (auto const &m : order) {
-    bcfeats.push_back(bcfmap.find(std::make_pair(m.x0, m.x1))->second);
-  }
+  // std::vector<std::vector<FVal>> bcfeats;
+  // bcfeats.reserve(order.size());
+  // for (auto const &m : order) {
+  //   bcfeats.push_back(bcfmap.find(std::make_pair(m.x0, m.x1))->second);
+  // }
 
-  return std::make_tuple(order, saliencies, bcfeats);
+  return std::make_tuple(order, saliencies);
 }
 
 bp::tuple MyHmt::merge_order_bc_wrp(
@@ -154,6 +153,5 @@ bp::tuple MyHmt::merge_order_bc_wrp(
       merge_order_bc_operation(X_prev_, spLabels_itk, vecImagePairs,
                                gpbImage_itk, useLogOfShape, false, this->bc);
   return bp::make_tuple(nph::vector_triple_to_np<Label>(std::get<0>(out)),
-                        nph::vector_to_np<double>(std::get<1>(out)),
-                        nph::vector_2d_to_np<FVal>(std::get<2>(out)));
+                        nph::vector_to_np<double>(std::get<1>(out)));
 }

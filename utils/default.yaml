@@ -20,9 +20,8 @@ hist-bins-color : 10
 hist-bins-texture : 64
 initial-saliency : 1.0
 saliency-bias : 1.0
-normalize-length : true
-use-log-shape : false
 
-gpb-max-shape: 300
+n-trees: 255
+sample-size-ratio: 0.7
 
-cuda: False
+n-classifiers: 10

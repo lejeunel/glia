@@ -110,21 +110,15 @@ public:
   }
 
   // Predict operators
-  int predict(FeaturesPtr v, int const& cat) {
-    return 0;
+  int predict(FeaturesPtr f, int const& cat) {
+    auto pred = rand_forest[cat]->apply_multiclass(f)->get_int_label(0);
+
+    // set 0 to -1 for merge algorithm
+    if(pred == 0)
+      return -1;
+    return pred;
   };
 
-  std::vector<MulticlassLabelsPtr> predict(CategorizedFeaturesPtr feats_) {
-
-    std::vector<MulticlassLabelsPtr> predictions;
-    for (int i = 0; i < feats_->n_cats; ++i) {
-      // initialize
-
-      auto pred_labels = rand_forest[i]->apply_multiclass(feats_->get(i));
-      predictions.push_back(MulticlassLabelsPtr(pred_labels));
-    }
-    return predictions;
-  }
 };
 
 class EnsembleRandomForest {

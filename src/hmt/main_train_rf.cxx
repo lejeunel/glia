@@ -32,11 +32,10 @@ void MyHmt::train_rf_operation(np::ndarray const &X_, np::ndarray const &Y_) {
   auto X = np_to_shogun_feats<double>(X_);
   auto Y = np_to_shogun_labels<int>(Y_);
 
-
+  std::cout << "make categorized features" << std::endl;
   auto X_cat = std::make_shared<CategorizedFeatures>(X, 0, 1);
+  std::cout << "ok" << std::endl;
 
   bc->train(X_cat, Y);
 
-  // auto serial_str = bc->to_serialized();
-  // return std_2d_vector_to_list(serial_str);
 }

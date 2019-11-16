@@ -158,7 +158,10 @@ MulticlassLabelsPtr np_to_shogun_labels(np::ndarray const &X) {
   auto labels = std::make_shared<MulticlassLabels>(X.shape(0));
 
   for (int i = 0; i < labels->get_num_labels(); ++i) {
-    labels->set_int_label(i, data[i]);
+    if(data[i] <= 0)
+        labels->set_int_label(i, 0);
+    else
+      labels->set_int_label(i, 1);
   }
   return labels;
 }
