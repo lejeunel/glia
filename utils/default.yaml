@@ -1,4 +1,4 @@
-slic-segments : 1000
+slic-segments : 1200
 slic-compactness: 20
 n-ori : 8
 k-mean-num : 64

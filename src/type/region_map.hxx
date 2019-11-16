@@ -60,7 +60,11 @@ public:
       genPointMap(*pPointMap, image, mask);
       genContourMap
           (*pBorderMap, *pBoundaryMap, *pPointMap, image, mask);
+      std::cout << "genContourMap. Got " << pBoundaryMap->size() << " boundary points" << std::endl;
+      std::cout << "genContourMap. Got " << pBorderMap->size() << " border points" << std::endl;
+      std::cout << "initContour..." << std::endl;
       init();
+      std::cout << "ok" << std::endl;
     }
   }
 

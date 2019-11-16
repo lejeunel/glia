@@ -41,10 +41,8 @@ public:
   std::string hello() { return "Just nod if you can hear me!"; }
   void set_model(bp::list models){};
   np::ndarray watershed_operation(np::ndarray const &, double, bool);
-  np::ndarray pre_merge_operation(np::ndarray const &, np::ndarray const &,
-                                  bp::list const &, double, bool);
-  bp::tuple merge_order_pb_operation(np::ndarray const &, np::ndarray const &,
-                                     int const &);
+  bp::tuple merge_order_pb_wrp(np::ndarray const &, np::ndarray const &,
+                               int const &);
 
   // models is a list of lists
   void load_models(bp::list const &models) {
@@ -69,26 +67,22 @@ public:
     return std_2d_vector_to_list(serial_vec);
   };
 
-  np::ndarray bc_label_ri_operation(bp::list const &, np::ndarray const &,
-                                    np::ndarray const &,
-                                    bool const &, int const &, bool const &,
-                                    bool const &, double const &);
-  np::ndarray bc_feat_operation(bp::list const &, np::ndarray const &,
-                                np::ndarray const &, // SP labels
-                                bp::list const &, // LAB, HSV, SIFT codes, etc..
-                                np::ndarray const &, // gPb, UCM, etc..
-                                bp::list const &, bp::list const &,
-                                bp::list const &, double const &,
-                                double const &, bp::list const &, bool const &,
-                                bool const &);
-  bp::tuple merge_order_bc_operation(
+  np::ndarray bc_label_ri_wrp(bp::list const &, np::ndarray const &,
+                              np::ndarray const &, bool const &, int const &,
+                              bool const &, bool const &, double const &);
+  np::ndarray bc_feat_wrp(bp::list const &, np::ndarray const &,
+                          np::ndarray const &, // SP labels
+                          bp::list const &,    // LAB, HSV, SIFT codes, etc..
+                          np::ndarray const &, // gPb, UCM, etc..
+                          bp::list const &, bp::list const &, bp::list const &,
+                          double const &, double const &, bp::list const &,
+                          bool const &, bool const &);
+  bp::tuple merge_order_bc_wrp(
       np::ndarray const &, // boundary features of previous run
       np::ndarray const &, // SP labels
       bp::list const &,    // LAB, HSV, SIFT codes, etc..
-      np::ndarray const &,
       np::ndarray const &, // gPb, UCM, etc..
-      bp::list const &, bp::list const &, bp::list const &, bool const &,
-      bool const &);
+      bp::list const &, bp::list const &, bp::list const &, bool const &);
 
   void train_rf_operation(np::ndarray const &, np::ndarray const &);
 };

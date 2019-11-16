@@ -16,14 +16,18 @@ genMergeOrderGreedy
  IFb initFb, IFsal initFsal, UFb updateFb, UFsal updateFsal, CFunc fcond)
 {
   TBoundaryTable<TBTItemData, TRegionMap> bt(rmap, initFb, initFsal);
+  std::cout << "done BoundaryTable" << std::endl;
   typename TRegionMap::Key keyToAssign = rmap.maxKey() + 1;
   order.reserve(order.size() + rmap.size() - 1);
   saliencies.reserve(saliencies.size() + rmap.size() - 1);
   while (!bt.empty()) {
+    std::cout << "2" << std::endl;
     auto btit = bt.top(fcond);
     if (btit == bt.table().end()) { break; } // Stop if no item satifies
     auto r0 = btit->first.first;
     auto r1 = btit->first.second;
+
+    // std::cout << "merging (" << r0 << "," << r1 << ") -> " << keyToAssign << std::endl;
     order.push_back
         (TTriple<typename TRegionMap::Key>(r0, r1, keyToAssign));
     saliencies.push_back(btit->second->mqit->first);
@@ -138,6 +142,7 @@ genMergeOrderGreedyUsingPbApproxMedian
         if (p == DUMMY) { perr("Error: invalid boundary saliency..."); }
         return -p;
       };
+  std::cout << "starting genMergeOrderGreedy" << std::endl;
   genMergeOrderGreedy<ItemData>
       (order, saliencies, rmap, updateRegion, initFb, initFsal,
        updateFb, updateFsal, fcond);

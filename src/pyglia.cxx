@@ -28,22 +28,18 @@ BOOST_PYTHON_MODULE(libglia) {
       .def("watershed", &MyHmt::watershed_operation,
            bp::args("image", "level", "relabel"),
            "Generate watershed segmentation")
-      .def("pre_merge", &MyHmt::pre_merge_operation,
-           bp::args("label", "pbArray", "sizeThresholds", "rpbThreshold",
-                    "relabel"),
-           "Merge labels to eliminate small elements")
 
-      .def("merge_order_pb", &MyHmt::merge_order_pb_operation,
+      .def("merge_order_pb", &MyHmt::merge_order_pb_wrp,
            bp::args("label", "pbArray", "bd_intens_stats_type"),
            "Perform greedy merge according to boundary probability")
 
-      .def("merge_order_bc", &MyHmt::merge_order_bc_operation,
-           bp::args("X_prev", "label", "images", "truth", "pbArray",
+      .def("merge_order_bc", &MyHmt::merge_order_bc_wrp,
+           bp::args("X_prev", "label", "images", "pbArray",
                     "histogramBins", "histogramLowerValues",
-                    "histogramHigherValues", "useLogOfShapes", "useSimpleFeatures"),
+                    "histogramHigherValues", "useLogOfShapes"),
            "Perform greedy merge according to boundary probability")
 
-      .def("bc_feat", &MyHmt::bc_feat_operation,
+      .def("bc_feat", &MyHmt::bc_feat_wrp,
            bp::args("mergeList", "salienciesArray", "labelImages", "Images",
                     "boundaryImages", "histogramBins", "histogramLowerValues",
                     "histogramHigherValues", "initialSaliency", "saliencBias",
@@ -58,7 +54,7 @@ BOOST_PYTHON_MODULE(libglia) {
       .def("get_models", &MyHmt::get_models,
            "Return models in JSON format")
 
-      .def("bc_label_ri", &MyHmt::bc_label_ri_operation,
+      .def("bc_label_ri", &MyHmt::bc_label_ri_wrp,
            bp::args("mergeOrderList", "labels", "groundtruth", 
                     "usePairF1", "globalOpt", "optSplit", "tweak",
                     "maxPrecDrop"),

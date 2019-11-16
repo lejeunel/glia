@@ -149,11 +149,11 @@ template <typename T> std::vector<T> get_sorted_uniques(T *v, int const &len) {
 template <typename Tx>
 MulticlassLabelsPtr np_to_shogun_labels(np::ndarray const &X) {
 
-  // np::ndarray X_ = X.astype(np::dtype::get_builtin<Tx>());
+  auto X_ = X.astype(np::dtype::get_builtin<Tx>());
   // auto X_copy = X_.copy();
   // Tx *data = reinterpret_cast<Tx *>(X_copy.get_data());
 
-  Tx *data = reinterpret_cast<Tx *>(X.get_data());
+  Tx *data = reinterpret_cast<Tx *>(X_.get_data());
 
   auto labels = std::make_shared<MulticlassLabels>(X.shape(0));
 

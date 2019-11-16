@@ -35,6 +35,18 @@ def get_features(img, cfg, hed_network, hmt):
     contours = hed_network(img_tnsr.float())
     contours = contours.squeeze().detach().cpu().numpy()
 
+    labels = segmentation.slic(img,
+                                n_segments=cfg.slic_segments,
+                                compactness=cfg.slic_compactness)
+    print('num. of labels: {}'.format(np.unique(labels).size))
+
+    # This is the merge based on boundary probabilities (first tree in the ensemble)
+    contour_labels = segmentation.find_boundaries(labels)
+    print('Numpy got {} contour points'.format(contour_labels.sum()))
+    order, saliencies = hmt.merge_order_pb(labels,
+                                           contours,
+                                           1)
+
     img_lab = color.rgb2lab(img)
     img_hsv = color.rgb2hsv(img)
 
@@ -64,15 +76,6 @@ def get_features(img, cfg, hed_network, hmt):
     else:
         img_ = img
 
-    labels = segmentation.slic(img,
-                                n_segments=cfg.slic_segments,
-                                compactness=cfg.slic_compactness)
-    print('num. of labels: {}'.format(np.unique(labels).size))
-
-    # This is the merge based on boundary probabilities (first tree in the ensemble)
-    order, saliencies = hmt.merge_order_pb(labels.copy(),
-                                                contours,
-                                                2)
 
     # for each clique, compute features for the boundary classifier
     bc_feats = hmt.bc_feat(list(order),

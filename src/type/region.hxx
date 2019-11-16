@@ -29,6 +29,7 @@ class TRegion : public TPointPtrMap<TKey, TPoint> {
   TRegion (TKey key, Points* pPoints, Points* pBorder,
            std::vector<std::pair<TKey, Points*>> const& pBoundaries)
       : Super(std::make_pair(key, pPoints)) {
+    std::cout << "Adding region with key: " << key << std::endl;
     if (pBorder) { border.emplace(key, pBorder); }
     for (auto const& bn: pBoundaries)
     { boundary.emplace(std::make_pair(key, bn.first), bn.second); }

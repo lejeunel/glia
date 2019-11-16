@@ -11,53 +11,55 @@
 using namespace glia;
 using namespace glia::hmt;
 
-bp::tuple MyHmt::merge_order_bc_operation(
-    np::ndarray const &X_prev,   // boundary features of previous run
-    np::ndarray const &spLabels, // SP labels
-    bp::list const &images,      // LAB, HSV, SIFT codes, etc..
-    np::ndarray const &truth,
-    np::ndarray const &gpbImage, // gPb, UCM, etc..
-    bp::list const &histogramBins, bp::list const &histogramLowerValues,
-    bp::list const &histogramHigherValues, bool const &useLogOfShape,
-    bool const &useSimpleFeatures) {
+using LabelImageType = LabelImage<DIMENSION>;
+using RealImageType = RealImage<DIMENSION>;
+using ImagePairs =
+    std::vector<hmt::ImageHistPair<RealImage<DIMENSION>::Pointer>>;
+typedef TRegionMap<Label, Point<DIMENSION>> RegionMap;
 
-  // this is to calculate threshold from previous boundary feature set
-  auto X_prev_ = np_to_shogun_feats<double>(X_prev);
-  auto X_cat = std::make_shared<CategorizedFeatures>(X_prev_, 0, 1);
+/*-------------------------------------------------------
+  Use a trained boundary classifier to generate a merge order
+
+Parameters:
+X: Features of boundary samples
+spLabels: Integer map of superpixel segmentation
+vecImagePairs: A list of images (holding image features) with corresponding histogram parameters (range, bins)
+gpbImage: global probability boundary
+normalizeSizeLength: see paper, default to true
+useLogOfShapes: see paper, default to true
+---------------------------------------------------------*/
+
+std::tuple<std::vector<TTriple<Label>>, std::vector<double>,
+           std::vector<std::vector<FVal>>>
+merge_order_bc_operation(
+    FeaturesPtr X,                    // boundary features of previous run
+    LabelImageType::Pointer spLabels, // SP labels
+    std::vector<ImageHistPair<RealImage<DIMENSION>::Pointer>> const
+        &vecImagePairs, // LAB, HSV, SIFT codes, etc..
+    RealImageType::Pointer const &gpbImage, // gPb, UCM, etc..
+    bool const &useLogOfShape, bool const &useSimpleFeatures,
+    std::shared_ptr<glia::alg::EnsembleRandomForest> bc) {
+
+  auto X_cat = std::make_shared<CategorizedFeatures>(X, 0, 1);
 
   std::vector<double> boundaryThresholds;
 
   auto mask = LabelImage<DIMENSION>::Pointer(nullptr);
-  auto spLabels_itk = nph::np_to_itk_label(spLabels);
-  auto gpbImage_itk = nph::np_to_itk_real(gpbImage);
-  auto truth_itk = nph::np_to_itk_label(truth);
-
-  using LabelImageType = LabelImage<DIMENSION>;
-  using RealImageType = RealImage<DIMENSION>;
-  using ImagePairs =
-      std::vector<hmt::ImageHistPair<RealImage<DIMENSION>::Pointer>>;
-  typedef TRegionMap<Label, Point<DIMENSION>> RegionMap;
 
   // Load and set up images
-  std::vector<ImageHistPair<RealImage<DIMENSION>::Pointer>> vecCodePairs,
-      vecImagePairs, vecBoundaryPairs, vecLabelPairs;
-
-  // Set histogram ranges and bins
-  vecImagePairs = nph::lists_to_image_hist_pair(
-      images, bp::extract<int>(histogramBins[1]),
-      bp::extract<double>(histogramLowerValues[1]),
-      bp::extract<double>(histogramHigherValues[1]));
+  std::vector<ImageHistPair<RealImage<DIMENSION>::Pointer>> vecBoundaryPairs,
+      vecLabelPairs;
 
   // Set up normalizing area/length
-  double normalizingArea = getImageVolume(spLabels_itk);
-  double normalizingLength = getImageDiagonal(spLabels_itk);
+  double normalizingArea = getImageVolume(spLabels);
+  double normalizingLength = getImageDiagonal(spLabels);
 
-  RegionMap rmap(spLabels_itk, mask, false);
+  RegionMap rmap(spLabels, mask, false);
   // Boundary feature compute
   std::unordered_map<std::pair<Label, Label>, std::vector<FVal>> bcfmap;
-  auto fBcFeat = [normalizingArea, normalizingLength, &gpbImage_itk,
-                  &vecImagePairs, &vecBoundaryPairs, &vecLabelPairs, &bcfmap,
-                  useLogOfShape, useSimpleFeatures, boundaryThresholds](
+  auto fBcFeat = [normalizingArea, normalizingLength, &gpbImage, &vecImagePairs,
+                  &vecBoundaryPairs, &vecLabelPairs, &bcfmap, useLogOfShape,
+                  useSimpleFeatures, boundaryThresholds](
                      std::vector<FVal> &data, RegionMap::Region const &reg0,
                      RegionMap::Region const &reg1,
                      RegionMap::Region const &reg2, Label r0, Label r1,
@@ -65,13 +67,13 @@ bp::tuple MyHmt::merge_order_bc_operation(
     auto rf0 = std::make_shared<RegionFeats>();
     auto rf1 = std::make_shared<RegionFeats>();
     auto rf2 = std::make_shared<RegionFeats>();
-    rf0->generate(reg0, normalizingArea, normalizingLength, gpbImage_itk,
+    rf0->generate(reg0, normalizingArea, normalizingLength, gpbImage,
                   boundaryThresholds, vecImagePairs, vecLabelPairs,
                   vecBoundaryPairs, nullptr);
-    rf1->generate(reg1, normalizingArea, normalizingLength, gpbImage_itk,
+    rf1->generate(reg1, normalizingArea, normalizingLength, gpbImage,
                   boundaryThresholds, vecImagePairs, vecLabelPairs,
                   vecBoundaryPairs, nullptr);
-    rf2->generate(reg2, normalizingArea, normalizingLength, gpbImage_itk,
+    rf2->generate(reg2, normalizingArea, normalizingLength, gpbImage,
                   boundaryThresholds, vecImagePairs, vecLabelPairs,
                   vecBoundaryPairs, nullptr);
     BoundaryClassificationFeats bcf;
@@ -85,8 +87,8 @@ bp::tuple MyHmt::merge_order_bc_operation(
     }
     RegionMap::Region::Boundary b;
     getBoundary(b, reg0, reg1);
-    bcf.x0.generate(b, normalizingLength, *bcf.x1, *bcf.x2, *bcf.x3,
-                    gpbImage_itk, boundaryThresholds, vecLabelPairs);
+    bcf.x0.generate(b, normalizingLength, *bcf.x1, *bcf.x2, *bcf.x3, gpbImage,
+                    boundaryThresholds, vecLabelPairs);
     if (useLogOfShape) {
       bcf.x0.log();
       rf0->log();
@@ -102,19 +104,19 @@ bp::tuple MyHmt::merge_order_bc_operation(
   };
 
   // Boundary predictor (lambda function passed to merging algorithm)
-  auto fBcPred = [this, X_cat](std::vector<double> const& data) {
-                   auto data_ = SGVector<double>(data.begin(), data.end());
-                   auto cat = X_cat->get_cat<double>(data_, 0, 1);
-                   auto data_mat = SGMatrix<double>(data_);
-                   auto data__ = std::make_shared<DenseFeatures<double>>(data_mat);
-                   return this->bc->predict(data__, cat);
+  auto fBcPred = [bc, X_cat](std::vector<double> const &data) {
+    auto data_ = SGVector<double>(data.begin(), data.end());
+    auto cat = X_cat->get_cat<double>(data_, 0, 1);
+    auto data_mat = SGMatrix<double>(data_);
+    auto data__ = std::make_shared<DenseFeatures<double>>(data_mat);
+    return bc->predict(data__, cat);
   };
 
   // Generate merging orders
   std::vector<TTriple<Label>> order;
   std::vector<double> saliencies;
   genMergeOrderGreedyUsingBoundaryClassifier<std::vector<FVal>>(
-      order, saliencies, truth_itk, mask, fBcFeat, fBcPred,
+      order, saliencies, spLabels, mask, fBcFeat, fBcPred,
       f_true<TBoundaryTable<std::vector<FVal>, RegionMap> &,
              TBoundaryTable<std::vector<FVal>, RegionMap>::iterator>);
 
@@ -125,22 +127,33 @@ bp::tuple MyHmt::merge_order_bc_operation(
     bcfeats.push_back(bcfmap.find(std::make_pair(m.x0, m.x1))->second);
   }
 
-  return bp::make_tuple(nph::vector_triple_to_np<Label>(order),
-                        nph::vector_to_np<double>(saliencies),
-                        nph::vector_2d_to_np<FVal>(bcfeats));
+  return std::make_tuple(order, saliencies, bcfeats);
 }
 
-bp::tuple
-train_bc(bp::list const &bcModels,
-         np::ndarray const &bcFeats, // Features for boundary classifier
-         bp::list const &images,     // LAB, HSV, SIFT codes, etc..
-         np::ndarray const &truth,
-         np::ndarray const &gpbImage, // gPb, UCM, etc..
-         bp::list const &histogramBins, bp::list const &histogramLowerValues,
-         bp::list const &histogramHigherValues,
-         bp::list const &boundaryShapeThresholds,
-         bool const &normalizeSizeLength, bool const &useLogOfShape,
-         bool useSimpleFeatures) {
+bp::tuple MyHmt::merge_order_bc_wrp(
+    np::ndarray const &X_prev,   // boundary features of previous run
+    np::ndarray const &spLabels, // SP labels
+    bp::list const &images,      // LAB, HSV, SIFT codes, etc..
+    np::ndarray const &gpbImage, // gPb, UCM, etc..
+    bp::list const &histogramBins, bp::list const &histogramLowerValues,
+    bp::list const &histogramHigherValues, bool const &useLogOfShape) {
 
-  auto truth_itk = nph::np_to_itk_label(truth);
+  auto spLabels_itk = nph::np_to_itk_label(spLabels);
+  auto gpbImage_itk = nph::np_to_itk_real(gpbImage);
+
+  // Set histogram ranges and bins
+  auto vecImagePairs = nph::lists_to_image_hist_pair(
+      images, bp::extract<int>(histogramBins[1]),
+      bp::extract<double>(histogramLowerValues[1]),
+      bp::extract<double>(histogramHigherValues[1]));
+
+  // this is to calculate threshold from previous boundary feature set
+  auto X_prev_ = np_to_shogun_feats<double>(X_prev);
+
+  auto out =
+      merge_order_bc_operation(X_prev_, spLabels_itk, vecImagePairs,
+                               gpbImage_itk, useLogOfShape, false, this->bc);
+  return bp::make_tuple(nph::vector_triple_to_np<Label>(std::get<0>(out)),
+                        nph::vector_to_np<double>(std::get<1>(out)),
+                        nph::vector_2d_to_np<FVal>(std::get<2>(out)));
 }

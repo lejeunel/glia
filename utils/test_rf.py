@@ -50,7 +50,6 @@ def main(cfg):
         feats = get_features(img, cfg, hed_network, hmt)
         X = feats['bc_feats']
         Y = hmt.bc_label_ri(feats['order'],
-                                feats['saliencies'],
                                 feats['labels'],
                                 sample['label/segmentation'],
                                 True,

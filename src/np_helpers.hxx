@@ -53,9 +53,12 @@ np::ndarray itk_to_np(ImageType *inputImage) {
   return out_np.reshape(bp::make_tuple(size[1], size[0]));
 }
 
+
 // Converts a numpy array to ITK image
 inline LabelImage<DIMENSION>::Pointer
 np_to_itk_label(const np::ndarray &inputArray) {
+
+  auto X = inputArray.astype(np::dtype::get_builtin<Label>());
 
   using LabelImageType = LabelImage<DIMENSION>;
   using ShapeType = const long int *;
@@ -65,58 +68,50 @@ np_to_itk_label(const np::ndarray &inputArray) {
   typename ImportFilterType::SizeType size;
   typename ImportFilterType::RegionType region;
   typename ImportFilterType::IndexType start;
-  ImportFilterType::Pointer importFilter = ImportFilterType::New();
 
-  ShapeType shape = reinterpret_cast<ShapeType>(inputArray.get_shape());
+  ShapeType shape = reinterpret_cast<ShapeType>(X.get_shape());
   size[1] = shape[0];
   size[0] = shape[1];
-  // std::cout << "shape 0,1: " << shape[0] << "," << shape[1] << std::endl;
-  // std::cout << "size 0,1: " << size[0] << "," << size[1] << std::endl;
   start.Fill(0);
 
   region.SetIndex(start);
   region.SetSize(size);
 
   image->SetRegions(region);
-  const itk::SpacePrecisionType origin[2] = {0.0, 0.0};
-  importFilter->SetOrigin(origin);
-  const itk::SpacePrecisionType spacing[2] = {1.0, 1.0};
-  importFilter->SetSpacing(spacing);
   image->Allocate();
-  // std::cout << "image at np_to_itk_label" << std::endl;
-  // std::cout << image << std::endl;
-  // std::cout << "before cast" << std::endl
-  //        << bp::extract<char const *>(bp::str(inputArray)) << std::endl;
 
-  Label *data = reinterpret_cast<Label *>(inputArray.get_data());
+  Label *data = reinterpret_cast<Label *>(X.get_data());
+  int i = 0;
+  for (int x = 0; x < size[0]; ++x) {
+    for (int y = 0; y < size[1]; ++y) {
+    const LabelImageType::IndexType pixelIndex = {{x, y}};
+    auto val = data[i];
+    image->SetPixel(pixelIndex, val);
+    i++;
+    }
+  }
 
-  // std::cout << "data[0]: " << data[0] << std::endl;
-  // std::cout << "data[1000]: " << data[1000] << std::endl;
-  const bool importImageFilterWillOwnTheBuffer = false;
-  importFilter->SetImportPointer(data,
-                                 size[0] * size[1], // number of pixels
-                                 importImageFilterWillOwnTheBuffer);
 
-  importFilter->SetRegion(region);
-  importFilter->Update();
-  return importFilter->GetOutput();
+  return image;
 }
 
-inline RealImage<3>::Pointer np_img_to_itk_real(const np::ndarray &inputArray) {
 
-  using RealImageType = RealImage<3>;
+inline RealImage<2>::Pointer np_to_itk_real(const np::ndarray &inputArray) {
+
+  auto X = inputArray.astype(np::dtype::get_builtin<Real>());
+  using RealImageType = RealImage<2>;
   using ShapeType = const long int *;
-  typedef itk::ImportImageFilter<Real, 3> ImportFilterType;
+  typedef itk::ImportImageFilter<Real, 2> ImportFilterType;
+  typedef itk::PasteImageFilter<RealImageType> PasteFilterType;
   typename RealImageType::Pointer image = RealImageType::New();
   typename ImportFilterType::SizeType size;
   typename ImportFilterType::RegionType region;
   typename ImportFilterType::IndexType start;
   ImportFilterType::Pointer importFilter = ImportFilterType::New();
 
-  ShapeType shape = reinterpret_cast<ShapeType>(inputArray.get_shape());
+  ShapeType shape = reinterpret_cast<ShapeType>(X.get_shape());
   size[1] = shape[0];
   size[0] = shape[1];
-  size[2] = 3;
   start.Fill(0);
 
   region.SetIndex(start);
@@ -125,78 +120,18 @@ inline RealImage<3>::Pointer np_img_to_itk_real(const np::ndarray &inputArray) {
   image->SetRegions(region);
   image->Allocate();
 
-  const itk::SpacePrecisionType origin[2] = {0.0, 0.0};
-  importFilter->SetOrigin(origin);
-  const itk::SpacePrecisionType spacing[2] = {1.0, 1.0};
-  importFilter->SetSpacing(spacing);
+  Real *data = reinterpret_cast<Real *>(X.get_data());
+  int i = 0;
+  for (int x = 0; x < size[0]; ++x) {
+    for (int y = 0; y < size[1]; ++y) {
+    const RealImageType::IndexType pixelIndex = {{x, y}};
+    auto val = data[i];
+    image->SetPixel(pixelIndex, val);
+    i++;
+    }
+  }
 
-  Real *data = reinterpret_cast<Real *>(inputArray.get_data());
-
-  const bool importImageFilterWillOwnTheBuffer = false;
-  importFilter->SetImportPointer(data,
-                                 size[0] * size[1] * 3, // number of pixels
-                                 importImageFilterWillOwnTheBuffer);
-  importFilter->SetRegion(region);
-  importFilter->Update();
-
-  return importFilter->GetOutput();
-}
-
-inline RgbImage::Pointer np_to_itk_rgb(const np::ndarray &inputArray) {
-
-  // print(inputArray);
-
-  using ShapeType = const long int *;
-  typedef itk::ImportImageFilter<Rgb, DIMENSION> ImportFilterType;
-  typename RgbImage::Pointer image = RgbImage::New();
-  typename ImportFilterType::SizeType size;
-  typename ImportFilterType::RegionType region;
-  typename ImportFilterType::IndexType start;
-  ImportFilterType::Pointer importFilter = ImportFilterType::New();
-
-  ShapeType shape = reinterpret_cast<ShapeType>(inputArray.get_shape());
-  size[1] = shape[0];
-  size[0] = shape[1];
-  size[2] = shape[2];
-  start.Fill(0);
-
-  region.SetIndex(start);
-  region.SetSize(size);
-
-  image->SetRegions(region);
-  image->Allocate();
-
-  const itk::SpacePrecisionType origin[2] = {0.0, 0.0};
-  importFilter->SetOrigin(origin);
-  const itk::SpacePrecisionType spacing[2] = {1.0, 1.0};
-  importFilter->SetSpacing(spacing);
-
-  Rgb *data = reinterpret_cast<Rgb *>(inputArray.get_data());
-
-  const bool importImageFilterWillOwnTheBuffer = false;
-  importFilter->SetImportPointer(data,
-                                 size[0] * size[1], // number of pixels
-                                 importImageFilterWillOwnTheBuffer);
-  importFilter->SetRegion(region);
-  importFilter->Update();
-
-  return importFilter->GetOutput();
-}
-
-inline RealImage<DIMENSION>::Pointer
-np_to_itk_real(const np::ndarray &inputArray) {
-  using InputImageType = RgbImage;
-  using OutputImageType = RealImage<DIMENSION>;
-
-  using FilterType =
-      itk::RGBToLuminanceImageFilter<InputImageType, OutputImageType>;
-
-  FilterType::Pointer filter = FilterType::New();
-  RgbImage::Pointer rgb = np_to_itk_rgb(inputArray);
-  filter->SetInput(rgb);
-
-  filter->Update();
-  return filter->GetOutput();
+  return image;
 }
 
 template <typename T>
@@ -321,8 +256,8 @@ std::vector<glia::TTriple<T>> np_to_vector_triple(bp::list const &list) {
 // This builds vector of ImageHistPair
 inline std::vector<hmt::ImageHistPair<RealImage<DIMENSION>::Pointer>>
 lists_to_image_hist_pair(bp::list const &im_list, int const &histogramBins,
-                              double const &histogramLowerValues,
-                              double const &histogramHigherValues) {
+                         double const &histogramLowerValues,
+                         double const &histogramHigherValues) {
 
   int n_imgs = bp::len(im_list);
   std::pair<double, double> hist_range;
@@ -342,5 +277,15 @@ lists_to_image_hist_pair(bp::list const &im_list, int const &histogramBins,
 
   return out;
 }
+
+template <typename T, typename TPointer>
+void write_image(TPointer img, std::string const &fname) {
+  using WriterType = itk::ImageFileWriter<T>;
+  TPointer writer = WriterType::New();
+  writer->SetFileName(fname);
+  writer->SetInput(img);
+  writer->Update();
+}
+
 }; // namespace nph
 #endif
