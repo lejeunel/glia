@@ -25,7 +25,7 @@ if(GLIA_MT)
   endif(OPENMP_FOUND)
 endif(GLIA_MT)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "-DNDEBUG -O3")
 
 find_package(ITK 5.0 REQUIRED)
 include(${ITK_USE_FILE})

@@ -40,8 +40,10 @@ def get_features(img, cfg, hed_network):
                                compactness=cfg.slic_compactness)
     print('num. of labels: {}'.format(np.unique(labels).size))
 
-    img_lab = color.rgb2lab(img)
-    img_hsv = color.rgb2hsv(img)
+    img_lab = np.rollaxis(color.rgb2lab(img), -1, 0)
+    img_lab = [c for c in img_lab]
+    img_hsv = np.rollaxis(color.rgb2hsv(img), -1, 0)
+    img_hsv = [c for c in img_hsv]
 
     my_daisy = lambda im: daisy(np.pad(im, cfg.daisy_radius),
                                 step=cfg.daisy_step,
@@ -55,8 +57,8 @@ def get_features(img, cfg, hed_network):
     print('Coding texture descriptors to {} words'.format(cfg.codebook_size))
     daisy_descs = [
         my_encode(my_daisy(img.mean(axis=-1))),
-        my_encode(my_daisy(img_lab[..., 1])),
-        my_encode(my_daisy(img_lab[..., 2]))
+        my_encode(my_daisy(img_lab[1])),
+        my_encode(my_daisy(img_lab[2]))
     ]
 
     orig_shape = img.shape

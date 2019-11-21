@@ -20,10 +20,15 @@ private:
   bool balance;
   int n_cats;
 
+  double cat_threshold;
+
 public:
   static std::shared_ptr<MyHmt> create() {
     return std::shared_ptr<MyHmt>(new MyHmt);
   }
+
+  double get_cat_threshold() { return cat_threshold; }
+
   void config(int n_cats_ = 3, int const &n_trees_ = 100,
               int const &num_features_ = 0,
               double const &sample_size_ratio_ = 0.7,
@@ -77,12 +82,13 @@ public:
                           bp::list const &, bp::list const &, bp::list const &,
                           double const &, double const &, bp::list const &,
                           bool const &, bool const &);
-  bp::tuple merge_order_bc_wrp(
-      np::ndarray const &, // boundary features of previous run
-      np::ndarray const &, // SP labels
-      bp::list const &,    // LAB, HSV, SIFT codes, etc..
-      np::ndarray const &, // gPb, UCM, etc..
-      bp::list const &, bp::list const &, bp::list const &, bool const &);
+  bp::tuple
+  merge_order_bc_wrp(np::ndarray const &, // SP labels
+                     bp::list const &,    // LAB, HSV, SIFT codes, etc..
+                     np::ndarray const &, // gPb, UCM, etc..
+                     bp::list const &, bp::list const &, bp::list const &,
+                     bool const &,
+                     double const&);
 
   void train_rf_operation(np::ndarray const &, np::ndarray const &);
 };

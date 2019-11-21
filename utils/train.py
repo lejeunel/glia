@@ -1,85 +1,134 @@
 from glia import libglia
-import utils as utls
+from feat_extr import get_features
+from hed.run import Network
+import torch
 import params
+from pascal_voc_loader import pascalVOCLoader
 from loader import Loader
 import matplotlib.pyplot as plt
 from skimage import io, segmentation, color
 import numpy as np
 import os
-from sklearn.ensemble import RandomForestClassifier
-import joblib
 from os.path import join as pjoin
-import copy
+from skimage.feature import daisy
+from skimage import transform, segmentation
+from scipy import cluster
+import pickle
 
 
 def main(cfg):
 
-    loader = Loader(root_path=cfg.in_path,
-                    feats_path=pjoin(cfg.run_path, 'features'),
-                    truth_type='hand')
+    device = torch.device('cuda' if cfg.cuda else 'cpu')
 
-    samples = [s for i, s in enumerate(loader) if i in cfg.train_frames]
+    hed_network = Network()
+    hed_network.load_pretrained().to(device).eval()
 
-    # construct samples and labels for RF
-    clique_samples = [{'feat': None, 'cat': None, 'label': None} for _ in range(len(samples))]
-    for i, s in enumerate(samples):
-        feat = s['feats']
-        clique_truths = libglia.bc_label_ri(feat['order'].tolist(),
-                                            feat['merged_labels'],
-                                            s['label/segmentation'],
-                                            np.array([]),
-                                            False,
-                                            0,
-                                            False,
-                                            False,
-                                            1.0)
-        clique_cats = utls.categorize_cliques(feat['order'], feat['merged_labels'])
-        clique_samples[i]['feat'] = feat['bc_feats']
-        clique_samples[i]['cat'] = clique_cats
-        clique_samples[i]['label'] = clique_truths
+    if (not os.path.exists(cfg.out_path)):
+        os.makedirs(cfg.out_path)
 
-    # concatenate
-    clique_feats = np.concatenate([c['feat'] for c in clique_samples], axis=0)
-    clique_cats = np.concatenate([c['cat'] for c in clique_samples], axis=0)
-    clique_labels = np.concatenate([c['label'] for c in clique_samples], axis=0)
+    hmt = libglia.hmt.create()
 
-    classifiers = [{i: None for i in range(3)} for _ in range(cfg.n_classifiers)]
-    X = {i: None for i in range(3)}
-    Y = {i: None for i in range(3)}
+    device = torch.device('cuda' if cfg.cuda else 'cpu')
 
+    hed_network = Network()
+    hed_network.load_pretrained().to(device).eval()
+
+    hmt = libglia.hmt.create()
+    hmt.config(3, cfg.n_trees, 0, cfg.sample_size_ratio, cfg.balance)
+
+    # for each clique, compute features for the boundary classifier
+    bc_feats_fn = lambda order, saliencies, labels, img_lab, img_hsv, daisy_descs, contours: hmt.bc_feat(
+        order, saliencies, labels, img_lab + img_hsv + daisy_descs, contours,
+        6 * [cfg.hist_bins_color] + 3 * [cfg.hist_bins_daisy],
+        [0., -127., -128., 0., 0., 0., 0., 0., 0.], [
+            100., 128., 127., 1., 1., 1., 256., 256., 256.
+        ], cfg.initial_saliency, cfg.saliency_bias, [0.2, 0.5, 0.8], cfg.
+        normalize_area, cfg.use_log_shape)
+
+    # generate merge order using boundary classifier
+    merge_order_bc_fn = lambda labels, img_lab, img_hsv, daisy_descs, contours, thr: hmt.merge_order_bc(
+        labels, img_lab + img_hsv + daisy_descs, contours,
+        6 * [cfg.hist_bins_color] + 3 * [cfg.hist_bins_daisy],
+        [0., -127., -128., 0., 0., 0., 0., 0., 0.], [
+            100., 128., 127., 1., 1., 1., 256., 256., 256.
+        ], cfg.use_log_shape, thr)
+
+    # for all frames, compute features and labels
+    phases = ['train', 'test']
+    feats = {k: [] for k in phases}
+    for phase in phases:
+        if(phase == 'train'):
+            path = cfg.in_path_train
+            frames = cfg.train_frames
+        else:
+            path = cfg.in_path_test
+            frames = cfg.test_frames
+
+        loader = Loader(root_path=path, truth_type='hand')
+        samples = [loader[f] for f in frames]
+        for i, sample in enumerate(samples):
+            print('[{}]: extracting image features {}/{}'.format(phase, i + 1, len(samples)))
+            img = sample['image']
+
+            feats[phase].append(get_features(img, cfg, hed_network))
+
+    X_list = []
+    Y_list = []
+    # train boundary classifier with aggregated features
     for t in range(cfg.n_classifiers):
-        # for each category of clique, train RF
-        for i in range(3):
-            if(t == 0):
-                X[i] = clique_feats[clique_cats == i+1, :]
-                Y[i] = clique_labels[clique_cats == i+1]
-            else:
-                Y[i] = rf.fit(X[i])
-            if(X[i].size > 0):
-                import pdb; pdb.set_trace() ## DEBUG ##
-                rf = libglia.train_rf(X[i], Y[i], cfg.n_trees_rf, 0, 0.7, 0, True)
-                rf.fit(X[i], Y[i])
-                classifiers[t][i] = copy.deepcopy(rf)
+        print('training classifier {}/{}'.format(i + 1, cfg.n_classifiers))
+        for i, s in enumerate(feats['train']):
+            print('{}/{}'.format(i + 1, len(feats['train'])))
 
-    # save the classifiers
-    path = pjoin(cfg.run_path, 'classifiers.p')
-    print('saving classifiers to {}'.format(path))
-    joblib.dump(classifiers, classifiers)
+            truth = loader[i]['label/segmentation']
+            img = sample['image']
+
+            if (t == 0):
+                # This is the merge based on boundary probabilities (first tree in the ensemble)
+                order, saliencies = hmt.merge_order_pb(s['labels'],
+                                                       s['contours'], 1)
+            else:
+                order, saliencies = merge_order_bc_fn(s['labels'],
+                                                      s['img_lab'],
+                                                      s['img_hsv'],
+                                                      s['daisy_descs'],
+                                                      s['contours'],
+                                                      hmt.get_threshold())
+
+            X = bc_feats_fn(order, saliencies, s['labels'], s['img_lab'],
+                            s['img_hsv'], s['daisy_descs'], s['contours'])
+            X_list.append(X)
+
+            # for each merge, compute label based on groundtruth
+            # -1 is for "merge"
+            # 1 is for "no merge"
+            Y = hmt.bc_label_ri(order, s['labels'],
+                                truth, True, 0, False,
+                                False, 1.0)
+            Y_list.append(Y)
+
+        hmt.train_rf(np.concatenate(X_list, axis=0),
+                     np.concatenate(Y_list))
+
+    if(not os.path.exists(cfg.out_path)):
+        os.makedirs(cfg.out_path)
+
+    path = pjoin(cfg.out_path, 'models.p')
+    models = hmt.get_models()
+    print('Saving models to {}'.format(path))
+    pickle.dump(models, open(path, 'wb'))
 
 
 if __name__ == "__main__":
 
     p = params.get_params()
 
-    p.add('--in-path', required=True)
-    p.add('--train-frames', type=int, nargs='+', required=True)
-    p.add('--run-path', required=True)
-    p.add('--n-trees-rf', type=int, default=255)
-    p.add('--n-classifiers', type=int, default=10)
+    p.add('--in-path-train', required=True)
+    p.add('--train-frames', action='append', type=int, required=True)
+    p.add('--out-path', required=True)
+    p.add('--in-path-test', required=True)
+    p.add('--test-frames', action='append', type=int, required=True)
 
     cfg = p.parse_args()
 
     main(cfg)
-
-
-

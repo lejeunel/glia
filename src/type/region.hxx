@@ -65,14 +65,18 @@ class TRegion : public TPointPtrMap<TKey, TPoint> {
   }
 
   virtual void merge (Self const& region) {
+    // std::cout << "1 ";
     Super::merge(region);
+    // std::cout << "2 ";
     border.merge(region.border);
+    // std::cout << "3 ";
     for (auto const& pp: region.boundary) {
       auto it = boundary.find
           (std::make_pair(pp.first.second, pp.first.first));
       if (it == boundary.end()) { boundary.merge(pp); }
       else { boundary.erase(it); }
     }
+    // std::cout << "4" << std::endl;
   }
 
   // neighbors: keys of basic superpixels

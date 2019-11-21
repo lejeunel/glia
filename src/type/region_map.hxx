@@ -119,8 +119,10 @@ public:
 
   virtual iterator merge (TKey r0, TKey r1, TKey r2) {
     auto it = citerator(*static_cast<Super*>(this), r2);
+    // std::cout << "merging regions ...";
     if (r2 != r0) { it->second.merge(Super::find(r0)->second); }
     if (r2 != r1) { it->second.merge(Super::find(r1)->second); }
+    // std::cout << "ok" << std::endl;
     return it;
   }
 

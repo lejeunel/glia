@@ -157,9 +157,10 @@ np::ndarray MyHmt::bc_feat_wrp(
 
   // Set histogram ranges and bins
   vecImagePairs = nph::lists_to_image_hist_pair(
-      images, bp::extract<int>(histogramBins[1]),
-      bp::extract<double>(histogramLowerValues[1]),
-      bp::extract<double>(histogramHigherValues[1]));
+      images,
+      histogramBins,
+      histogramLowerValues,
+      histogramHigherValues);
 
   auto feats = bc_feat_operation(order, saliencies_vec, segImage, vecImagePairs,
                                  pbImage, salBias, boundaryShapeThresholds,

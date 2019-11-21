@@ -261,23 +261,24 @@ std::vector<glia::TTriple<T>> np_to_vector_triple(bp::list const &list) {
 // convert python list of arrays to vector of itk real images
 // This builds vector of ImageHistPair
 inline std::vector<hmt::ImageHistPair<RealImage<DIMENSION>::Pointer>>
-lists_to_image_hist_pair(bp::list const &im_list, int const &histogramBins,
-                         double const &histogramLowerValues,
-                         double const &histogramHigherValues) {
+lists_to_image_hist_pair(bp::list const &im_list,
+                         bp::list const &histogramBins,
+                         bp::list const &histogramLowerValues,
+                         bp::list const &histogramHigherValues) {
 
   int n_imgs = bp::len(im_list);
-  std::pair<double, double> hist_range;
-  int n_bins;
   std::vector<hmt::ImageHistPair<RealImage<DIMENSION>::Pointer>> out;
 
   out.reserve(n_imgs);
 
   // typename RealImageType::Pointer img = RealImageType::New();
   for (unsigned int i = 0; i < bp::len(im_list); ++i) {
+    std::pair<double, double> hist_range;
+    int n_bins;
     np::ndarray arr = bp::extract<np::ndarray>(im_list[i]);
-    hist_range.first = histogramLowerValues;
-    hist_range.second = histogramHigherValues;
-    n_bins = histogramBins;
+    hist_range.first = bp::extract<double>(histogramLowerValues[i]);
+    hist_range.second = bp::extract<double>(histogramHigherValues[i]);
+    n_bins = bp::extract<int>(histogramBins[i]);
     out.emplace_back(np_to_itk_real(arr), n_bins, hist_range);
   }
 

@@ -7,9 +7,11 @@
 #include "util/struct_merge_bc.hxx"
 #include "util/text_cmd.hxx"
 #include "util/text_io.hxx"
+#include <chrono> 
 
 using namespace glia;
 using namespace glia::hmt;
+using namespace std::chrono; 
 
 using LabelImageType = LabelImage<DIMENSION>;
 using RealImageType = RealImage<DIMENSION>;
@@ -31,15 +33,13 @@ useLogOfShapes: see paper, default to true
 
 std::tuple<std::vector<TTriple<Label>>, std::vector<double>>
 merge_order_bc_operation(
-    FeaturesPtr X,                    // boundary features of previous run
     LabelImageType::Pointer spLabels, // SP labels
     std::vector<ImageHistPair<RealImage<DIMENSION>::Pointer>> const
         &vecImagePairs, // LAB, HSV, SIFT codes, etc..
     RealImageType::Pointer const &gpbImage, // gPb, UCM, etc..
     bool const &useLogOfShape, bool const &useSimpleFeatures,
-    std::shared_ptr<glia::alg::EnsembleRandomForest> bc) {
-
-  auto X_cat = std::make_shared<CategorizedFeatures>(X, 0, 1);
+    std::shared_ptr<glia::alg::EnsembleRandomForest> bc,
+                         double const& cat_thr) {
 
   std::vector<double> boundaryThresholds;
 
@@ -103,12 +103,17 @@ merge_order_bc_operation(
   };
 
   // Boundary predictor (lambda function passed to merging algorithm)
-  auto fBcPred = [bc, X_cat](std::vector<double> const &data) {
-    auto data_ = SGVector<double>(data.begin(), data.end());
-    auto cat = X_cat->get_cat<double>(data_, 0, 1);
+  auto fBcPred = [bc, cat_thr](std::vector<double> const &data) {
+    // auto start = high_resolution_clock::now(); 
+    auto data_ = SGVector<double>(data.front(), data.size());
+    auto cat = categorize_sample<double>(data_, 0, 1, cat_thr);
     auto data_mat = SGMatrix<double>(data_);
     auto data__ = std::make_shared<DenseFeatures<double>>(data_mat);
-    return bc->predict(data__, cat);
+    auto res =  bc->predict(data__, cat);
+    // auto stop = high_resolution_clock::now(); 
+    // auto duration = duration_cast<milliseconds>(stop - start); 
+    // std::cout << "predicted in " << duration.count() << "ms" << std::endl;
+    return res;
   };
 
   // Generate merging orders
@@ -130,28 +135,26 @@ merge_order_bc_operation(
 }
 
 bp::tuple MyHmt::merge_order_bc_wrp(
-    np::ndarray const &X_prev,   // boundary features of previous run
     np::ndarray const &spLabels, // SP labels
     bp::list const &images,      // LAB, HSV, SIFT codes, etc..
     np::ndarray const &gpbImage, // gPb, UCM, etc..
     bp::list const &histogramBins, bp::list const &histogramLowerValues,
-    bp::list const &histogramHigherValues, bool const &useLogOfShape) {
+    bp::list const &histogramHigherValues, bool const &useLogOfShape,
+    double const &cat_thr) {
 
   auto spLabels_itk = nph::np_to_itk_label(spLabels);
   auto gpbImage_itk = nph::np_to_itk_real(gpbImage);
 
   // Set histogram ranges and bins
   auto vecImagePairs = nph::lists_to_image_hist_pair(
-      images, bp::extract<int>(histogramBins[1]),
-      bp::extract<double>(histogramLowerValues[1]),
-      bp::extract<double>(histogramHigherValues[1]));
-
-  // this is to calculate threshold from previous boundary feature set
-  auto X_prev_ = np_to_shogun_feats<double>(X_prev);
+      images, histogramBins,
+      histogramLowerValues,
+      histogramHigherValues);
 
   auto out =
-      merge_order_bc_operation(X_prev_, spLabels_itk, vecImagePairs,
-                               gpbImage_itk, useLogOfShape, false, this->bc);
+      merge_order_bc_operation(spLabels_itk, vecImagePairs,
+                               gpbImage_itk, useLogOfShape, false, this->bc,
+                               cat_thr);
   return bp::make_tuple(nph::vector_triple_to_np<Label>(std::get<0>(out)),
                         nph::vector_to_np<double>(std::get<1>(out)));
 }

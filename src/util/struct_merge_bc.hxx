@@ -51,8 +51,11 @@ genMergeOrderGreedyUsingBoundaryClassifier (
     TSegImagePtr const& segImage, TMaskPtr const& mask,
     FFunc fBcFeat, BCFunc fBcPred, CFunc fcond)
 {
+  std::cout << "starting region maps..." << std::endl;
   TRegionMap<TKey, Point<TImage<TSegImagePtr>::ImageDimension>>
       rmap(segImage, mask, false); // Both region points and contours
+  std::cout << "rmap.size(): " << rmap.size() << std::endl;
+  std::cout << "starting genMergeOrderGreedyUsingBoundaryClassifier..." << std::endl;
   genMergeOrderGreedyUsingBoundaryClassifier<TBcFeat>(
       order, saliencies, rmap, fBcFeat, fBcPred, fcond);
 }

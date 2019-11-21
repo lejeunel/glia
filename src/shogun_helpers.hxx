@@ -27,9 +27,26 @@ typedef std::shared_ptr<MulticlassLabels> MulticlassLabelsPtr;
 // type without modifying the underlying dataset.
 template <typename T> T median(T *begin, T *end);
 
+template <typename T>
+inline int categorize_sample(SGVector<T> &f, int const &idx_first,
+                             int const &idx_second, double const &thr) {
+
+    if (std::max(f.get_element(idx_first), f.get_element(idx_second)) <
+        thr) {
+      return 0;
+    } else if ((std::min(f.get_element(idx_first), f.get_element(idx_second)) <
+                thr) &&
+               (std::max(f.get_element(idx_first), f.get_element(idx_second)) >=
+                thr)) {
+      return 1;
+    } else {
+      return 2;
+    }
+}
 class CategorizedFeatures {
 private:
   double threshold;
+
 public:
   std::vector<std::vector<int>> indices;
   int n_cats = 3;
@@ -38,20 +55,12 @@ public:
   std::vector<FeaturesPtr> feats_by_cat;
 
   CategorizedFeatures() {}
-  template<typename T>
-  int get_cat(SGVector<T> & f,
-                     int const& idx_first,
-                     int const& idx_second) const{
 
-      if (std::max(f.get_element(idx_first),
-                   f.get_element(idx_second)) > threshold) {
-        return 0;
-      } else if (std::min(f.get_element(idx_first),
-                          f.get_element(idx_second)) < threshold) {
-        return 1;
-      } else {
-        return 2;
-      }
+  double get_threshold() { return threshold; }
+  template <typename T>
+  int get_cat(SGVector<T> &f, int const &idx_first,
+              int const &idx_second) const {
+    return categorize_sample(f, idx_first, idx_second, threshold);
   }
   CategorizedFeatures(FeaturesPtr feats_, int const &idx_first,
                       int const &idx_second) {
@@ -158,8 +167,8 @@ MulticlassLabelsPtr np_to_shogun_labels(np::ndarray const &X) {
   auto labels = std::make_shared<MulticlassLabels>(X.shape(0));
 
   for (int i = 0; i < labels->get_num_labels(); ++i) {
-    if(data[i] <= 0)
-        labels->set_int_label(i, 0);
+    if (data[i] <= 0)
+      labels->set_int_label(i, 0);
     else
       labels->set_int_label(i, 1);
   }
@@ -224,9 +233,10 @@ inline boost::python::list std_vector_to_list(std::vector<T> vector) {
 }
 
 template <class T>
-inline boost::python::list std_2d_vector_to_list(std::vector<std::vector<T>> vector) {
+inline boost::python::list
+std_2d_vector_to_list(std::vector<std::vector<T>> vector) {
   boost::python::list list;
-  for(int i=0; i<vector.size(); ++i){
+  for (int i = 0; i < vector.size(); ++i) {
     auto l = std_vector_to_list(vector[i]);
     list.append(l);
   }
